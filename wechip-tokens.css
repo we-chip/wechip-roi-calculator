@@ -1,0 +1,289 @@
+/* ============================================================
+   WECHIP Design System — Color & Typography Tokens
+   Source of truth: Figma "WECHIP Lockers" — Components page.
+   ============================================================ */
+
+/* --- Webfont (Poppins) ----------------------------------------
+   Poppins is loaded locally from fonts/. The system relies on
+   Bold (700), SemiBold (600), Medium (500) and Regular (400);
+   ExtraBold (800) is included for very large display moments.
+   Inter is intentionally NOT bundled — fall back to system sans
+   on the rare legacy/feedback specimens that referenced it.
+*/
+@font-face { font-family: "Poppins"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("fonts/Poppins-Regular.ttf") format("truetype"); }
+@font-face { font-family: "Poppins"; font-style: normal; font-weight: 500; font-display: swap;
+  src: url("fonts/Poppins-Medium.ttf") format("truetype"); }
+@font-face { font-family: "Poppins"; font-style: normal; font-weight: 600; font-display: swap;
+  src: url("fonts/Poppins-SemiBold.ttf") format("truetype"); }
+@font-face { font-family: "Poppins"; font-style: normal; font-weight: 700; font-display: swap;
+  src: url("fonts/Poppins-Bold.ttf") format("truetype"); }
+@font-face { font-family: "Poppins"; font-style: normal; font-weight: 800; font-display: swap;
+  src: url("fonts/Poppins-ExtraBold.ttf") format("truetype"); }
+
+:root {
+  /* ──────────────────────────────────────────────────────────
+     1. CORE COLOR PALETTE
+     ────────────────────────────────────────────────────────── */
+
+  /* Brand */
+  --wc-brand-orange:        #FF7100; /* primary brand — buttons, accent shapes */
+  --wc-brand-orange-deep:   #ED6E23; /* logo wordmark warm tone */
+  --wc-brand-turquoise:     #79D1D4; /* secondary brand — blob accents */
+  --wc-brand-turquoise-2:   #8ECFD3; /* light tint variant */
+
+  /* System / "Noir bleuté" — the cool charcoal scale */
+  --wc-ink-1000:            #142429; /* deepest — full-bleed dark backgrounds */
+  --wc-ink-900:             #152429; /* near-equivalent (text on dark) */
+  --wc-ink-800:             #1F3640; /* primary text on light */
+  --wc-ink-700:             #1F6C70; /* deep teal accent text */
+  --wc-ink-600:             #313B4F; /* documentation labels */
+  --wc-ink-500:             #415D69; /* locker face mid-tone */
+  --wc-ink-400:             #74787A; /* secondary copy / muted */
+  --wc-ink-300:             #9A9898; /* placeholders, hints */
+  --wc-ink-200:             #C3C9CC; /* hairline borders, divider */
+  --wc-ink-150:             #CFD3D6; /* darker hairline */
+  --wc-ink-100:             #E9F0F0; /* keypad bed, soft surface */
+  --wc-ink-75:              #F6FAFA; /* subtle panel */
+  --wc-ink-50:              #FAFAFA; /* near-white field bg */
+  --wc-ink-0:               #FFFFFF;
+
+  /* Tints (alpha overlays used in flow art) */
+  --wc-orange-tint-12:      rgba(255, 113,   0, 0.12);
+  --wc-orange-tint-08:      rgba(255, 113,   0, 0.08);
+  --wc-orange-tint-05:      rgba(255, 113,   0, 0.05);
+  --wc-turquoise-tint-12:   rgba(142, 207, 211, 0.12);
+  --wc-turquoise-tint-10:   rgba(142, 207, 211, 0.10);
+  --wc-turquoise-tint-05:   rgba(142, 207, 211, 0.05);
+
+  /* Semantic — Status */
+  --wc-error:               #E41C1C; /* primary error */
+  --wc-error-deep:          #C50017; /* hover/pressed error */
+  --wc-error-tint:          #FCE8E8;
+  --wc-success:             #00A63E;
+  --wc-success-tint:        #E6F9EC;
+  --wc-info-tint:           #E6F9FA; /* turquoise-tinted info bg */
+  --wc-warn:                #FF7100; /* warnings reuse brand orange */
+
+  /* Surfaces */
+  --wc-surface-app-light:   #FFFFFF;
+  --wc-surface-app-dark:    var(--wc-ink-1000);
+  --wc-surface-panel:       #F6FAFA;       /* receive-flow keypad-side panel */
+  --wc-surface-panel-2:     var(--wc-ink-100); /* keypad bed */
+  --wc-surface-card:        #FFFFFF;
+
+  /* Foreground roles */
+  --wc-fg-1:                var(--wc-ink-800); /* primary text on light */
+  --wc-fg-2:                var(--wc-ink-400); /* secondary text */
+  --wc-fg-3:                var(--wc-ink-300); /* tertiary / hint */
+  --wc-fg-on-dark:          #FFFFFF;
+  --wc-fg-on-orange:        #FFFFFF;
+  --wc-fg-link:             var(--wc-ink-700);
+
+  /* Borders */
+  --wc-border-strong:       var(--wc-ink-800); /* form fields, text input */
+  --wc-border-default:      var(--wc-ink-200); /* keypad keys, header line */
+  --wc-border-subtle:       #E8ECEE;
+  --wc-border-error:        var(--wc-error);
+  --wc-border-success:      var(--wc-brand-turquoise-2);
+  --wc-border-doc:          #9747FF; /* dashed purple — DOC FRAMES ONLY */
+
+  /* ──────────────────────────────────────────────────────────
+     2. TYPOGRAPHY — base
+     ────────────────────────────────────────────────────────── */
+  --wc-font-display: "Poppins", "Inter", system-ui, -apple-system, "Segoe UI",
+                     Roboto, "Helvetica Neue", Arial, sans-serif;
+  --wc-font-body:    "Poppins", "Inter", system-ui, -apple-system, "Segoe UI",
+                     Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  /* Weights */
+  --wc-w-regular:    400;
+  --wc-w-medium:     500;
+  --wc-w-semibold:   600;
+  --wc-w-bold:       700;
+  --wc-w-extrabold:  800;
+
+  /* Letter-spacing */
+  --wc-tracking-tight:  -0.313px; /* used on display & button copy */
+  --wc-tracking-wide:    0.791px; /* used on the largest H1's */
+
+  /* ──────────────────────────────────────────────────────────
+     3. RADII / SHADOWS / SPACING
+     ────────────────────────────────────────────────────────── */
+  --wc-radius-xs:    4px;   /* locker doors */
+  --wc-radius-sm:    8px;
+  --wc-radius-md:    16px;  /* THE button / keypad-key / card radius */
+  --wc-radius-lg:    20px;  /* component sheet */
+  --wc-radius-xl:    32px;
+  --wc-radius-pill:  500px; /* circular tag wrappers */
+
+  --wc-stroke-1:     1px;
+  --wc-stroke-2:     2px;   /* keypad key border */
+  --wc-stroke-4:     4px;   /* form field, code-input filled */
+
+  /* Soft drop shadow for cards */
+  --wc-shadow-card:    0 8px 24px rgba(20, 36, 41, 0.08);
+  --wc-shadow-card-lg: 0 20px 40px rgba(20, 36, 41, 0.12);
+  --wc-shadow-modal:   0 24px 60px rgba(20, 36, 41, 0.25);
+
+  /* Spacing scale */
+  --wc-space-1:  4px;
+  --wc-space-2:  8px;
+  --wc-space-3:  12px;
+  --wc-space-4:  16px;
+  --wc-space-5:  20px;
+  --wc-space-6:  24px;
+  --wc-space-8:  32px;
+  --wc-space-10: 40px;
+  --wc-space-12: 48px;
+  --wc-space-16: 64px;
+  --wc-space-20: 80px;
+  --wc-space-24: 100px; /* canonical "100 padding" used across sheets */
+
+  /* Motion */
+  --wc-easing:           cubic-bezier(.2,.7,.2,1);
+  --wc-duration-fast:    120ms;
+  --wc-duration-base:    200ms;
+  --wc-duration-slow:    320ms;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   4. SEMANTIC TYPOGRAPHY — apply directly with class names
+   These mirror the Figma "FontDocTemplate" specimens.
+   ────────────────────────────────────────────────────────────── */
+
+.wc-display-xl,         /* Bold 70 — hero (Tap your code) */
+h1.wc {
+  font-family: var(--wc-font-display);
+  font-weight: var(--wc-w-bold);
+  font-size: 70px;
+  line-height: 82px;
+  letter-spacing: var(--wc-tracking-wide);
+  color: var(--wc-fg-1);
+}
+
+.wc-display-lg,         /* Bold 60 — hero on dark (Hello!…) */
+h2.wc {
+  font-family: var(--wc-font-display);
+  font-weight: var(--wc-w-bold);
+  font-size: 60px;
+  line-height: 68px;
+  letter-spacing: var(--wc-tracking-wide);
+}
+
+.wc-display-md,         /* Bold 48 */
+h3.wc {
+  font-family: var(--wc-font-display);
+  font-weight: var(--wc-w-bold);
+  font-size: 48px;
+  line-height: 60px;
+  letter-spacing: var(--wc-tracking-wide);
+}
+
+.wc-display-sm {        /* Bold 40 — courier hero / "Not great!" */
+  font-family: var(--wc-font-display);
+  font-weight: var(--wc-w-bold);
+  font-size: 40px;
+  line-height: 56px;
+  letter-spacing: var(--wc-tracking-wide);
+}
+
+.wc-h1 {                /* SemiBold 56 — primary screen title */
+  font-family: var(--wc-font-display);
+  font-weight: var(--wc-w-semibold);
+  font-size: 56px;
+  line-height: 64px;
+  letter-spacing: var(--wc-tracking-tight);
+}
+
+.wc-h2 {                /* SemiBold 32 — secondary */
+  font-family: var(--wc-font-display);
+  font-weight: var(--wc-w-semibold);
+  font-size: 32px;
+  line-height: 40px;
+  letter-spacing: var(--wc-tracking-tight);
+}
+
+.wc-h3 {                /* Bold 26 — card title */
+  font-family: var(--wc-font-display);
+  font-weight: var(--wc-w-bold);
+  font-size: 26px;
+  line-height: 32px;
+}
+
+.wc-button {            /* Bold 40 — large kiosk button */
+  font-family: var(--wc-font-display);
+  font-weight: var(--wc-w-bold);
+  font-size: 40px;
+  line-height: 48px;
+  letter-spacing: var(--wc-tracking-tight);
+  color: var(--wc-fg-on-orange);
+}
+
+.wc-button-md {         /* Bold 24 — courier-size buttons & header link */
+  font-family: var(--wc-font-display);
+  font-weight: var(--wc-w-bold);
+  font-size: 24px;
+  line-height: 24px;
+  letter-spacing: var(--wc-tracking-tight);
+}
+
+.wc-input {             /* Bold 42 — input value */
+  font-family: var(--wc-font-display);
+  font-weight: var(--wc-w-bold);
+  font-size: 42px;
+  line-height: 48px;
+  letter-spacing: var(--wc-tracking-tight);
+}
+
+.wc-key {               /* Bold 56 — keypad number */
+  font-family: var(--wc-font-display);
+  font-weight: var(--wc-w-bold);
+  font-size: 56px;
+  line-height: 1;
+  letter-spacing: var(--wc-tracking-tight);
+}
+
+.wc-body-lg {           /* Medium 30 — supporting copy */
+  font-family: var(--wc-font-body);
+  font-weight: var(--wc-w-medium);
+  font-size: 30px;
+  line-height: 44px;
+  letter-spacing: var(--wc-tracking-tight);
+  color: var(--wc-fg-2);
+}
+
+.wc-body {              /* Medium 26 — card subtitle */
+  font-family: var(--wc-font-body);
+  font-weight: var(--wc-w-medium);
+  font-size: 26px;
+  line-height: 36px;
+  letter-spacing: var(--wc-tracking-tight);
+  color: var(--wc-fg-2);
+}
+
+.wc-body-sm {           /* Medium 20 — meta */
+  font-family: var(--wc-font-body);
+  font-weight: var(--wc-w-medium);
+  font-size: 20px;
+  line-height: 28px;
+}
+
+.wc-meta {              /* Regular 12 — footer datetime */
+  font-family: var(--wc-font-body);
+  font-weight: var(--wc-w-regular);
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--wc-fg-2);
+  letter-spacing: 0.4px;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   5. UTILITY CLASSES used inside cards/UIs
+   ────────────────────────────────────────────────────────────── */
+.wc-on-dark { color: var(--wc-fg-on-dark); }
+.wc-on-light { color: var(--wc-fg-1); }
+.wc-orange { color: var(--wc-brand-orange); }
+.wc-turquoise { color: var(--wc-brand-turquoise); }
+.wc-error { color: var(--wc-error); }
+.wc-mono-num { font-variant-numeric: tabular-nums; }

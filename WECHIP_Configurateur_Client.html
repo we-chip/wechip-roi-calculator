@@ -1,0 +1,1326 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>WECHIP — Calculateur de rentabilité</title>
+<link rel="stylesheet" href="wechip-tokens.css">
+<style>
+  /* =============================================================
+     WECHIP ROI Calculator — applies the WECHIP design system
+     Tokens come from wechip-tokens.css (Poppins + colors + radii)
+     ============================================================= */
+
+  *{box-sizing:border-box}
+  html,body{
+    margin:0;
+    background:var(--wc-ink-75);
+    color:var(--wc-fg-1);
+    font-family:var(--wc-font-body);
+    font-size:14px;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .wrap{max-width:1320px;margin:0 auto;padding:32px 28px 56px}
+
+  /* ── HEADER ─────────────────────────────────────────────── */
+  header.app-head{
+    display:flex;justify-content:space-between;align-items:center;
+    margin-bottom:32px;padding:0 4px;gap:24px;flex-wrap:wrap;
+  }
+  .header-left{display:flex;align-items:center;gap:18px}
+  .logo-wordmark{height:44px;width:auto;display:block;flex-shrink:0}
+  .header-text{border-left:1.5px solid var(--wc-ink-200);padding-left:18px}
+  .header-text .eyebrow{
+    font-family:var(--wc-font-display);
+    font-size:12px;color:var(--wc-brand-orange);
+    text-transform:uppercase;letter-spacing:1.6px;
+    font-weight:var(--wc-w-bold);line-height:1;
+    margin-bottom:6px;
+  }
+  .header-text .title{
+    font-family:var(--wc-font-display);
+    font-size:22px;color:var(--wc-fg-1);
+    font-weight:var(--wc-w-semibold);
+    letter-spacing:var(--wc-tracking-tight);
+    line-height:1.2;
+  }
+  .actions{display:flex;gap:10px}
+  .actions button{
+    background:var(--wc-ink-0);
+    color:var(--wc-fg-1);
+    border:1.5px solid var(--wc-ink-200);
+    padding:10px 18px;
+    border-radius:var(--wc-radius-md);
+    cursor:pointer;
+    font:var(--wc-w-semibold) 13px/1 var(--wc-font-display);
+    letter-spacing:.2px;
+    transition:all var(--wc-duration-fast) var(--wc-easing);
+  }
+  .actions button:hover{
+    border-color:var(--wc-brand-orange);
+    color:var(--wc-brand-orange);
+    transform:translateY(-1px);
+  }
+  .actions button:active{transform:translateY(0)}
+
+  /* ── HERO STORY BANNER ───────────────────────────────────
+     Three-part narrative: Investment → Payback → Return.
+     Connects the numbers visually so non-finance users
+     read it as a single sentence.
+     ──────────────────────────────────────────────────────── */
+  .hero-banner{
+    background:var(--wc-surface-card);
+    border:1px solid var(--wc-border-subtle);
+    border-radius:var(--wc-radius-lg);
+    padding:28px 32px;
+    margin-bottom:24px;
+    box-shadow:var(--wc-shadow-card);
+    display:grid;
+    grid-template-columns:1fr auto 1fr auto 1.3fr;
+    grid-template-rows:auto auto 1fr;
+    gap:0 24px;align-items:start;
+  }
+  @media(max-width:900px){
+    .hero-banner{grid-template-columns:1fr;gap:18px;padding:22px 22px}
+    .hero-arrow{display:none}
+    .hero-step{border-top:1px solid var(--wc-border-subtle);padding-top:18px}
+    .hero-step:first-child{border-top:none;padding-top:0}
+  }
+
+  /* Each step spans all 3 rows; inner content uses subgrid-style alignment
+     so the step-tag, big number, and caption line up across columns. */
+  .hero-step{
+    display:grid;
+    grid-template-rows:subgrid;
+    grid-row:1 / span 3;
+    min-width:0;
+    row-gap:10px;
+  }
+  @supports not (grid-template-rows: subgrid){
+    .hero-step{display:flex;flex-direction:column;gap:10px}
+  }
+  .hero-arrow{grid-row:2}
+  .hero-step .step-tag{
+    display:inline-flex;align-items:center;gap:8px;
+    font-family:var(--wc-font-display);
+    font-size:12px;font-weight:var(--wc-w-bold);
+    text-transform:uppercase;letter-spacing:1.5px;
+    color:var(--wc-fg-2);
+    align-self:end;
+    line-height:1.25;
+  }
+  .hero-step .step-tag .num{
+    width:22px;height:22px;border-radius:50%;
+    background:var(--wc-ink-100);
+    display:inline-flex;align-items:center;justify-content:center;
+    font-size:11px;color:var(--wc-fg-1);
+    font-weight:var(--wc-w-bold);letter-spacing:0;
+  }
+  .hero-step.invest .step-tag .num{background:var(--wc-turquoise-tint-12);color:var(--wc-ink-700)}
+  .hero-step.payback .step-tag .num{background:var(--wc-orange-tint-12);color:var(--wc-brand-orange-deep)}
+  .hero-step.return .step-tag .num{background:var(--wc-ink-100);color:var(--wc-ink-800)}
+
+  .hero-step .big{
+    font-family:var(--wc-font-display);
+    font-size:38px;
+    font-weight:var(--wc-w-bold);
+    line-height:1;
+    color:var(--wc-fg-1);
+    font-variant-numeric:tabular-nums;
+    letter-spacing:var(--wc-tracking-tight);
+    white-space:nowrap;
+  }
+  .hero-step .big .unit{
+    font-size:18px;color:var(--wc-fg-2);
+    margin-left:6px;font-weight:var(--wc-w-semibold);
+  }
+  .hero-step .caption{
+    font-size:12px;color:var(--wc-fg-2);
+    font-weight:var(--wc-w-medium);
+    line-height:1.4;
+    align-self:start;
+  }
+  .hero-step.payback .big{color:var(--wc-brand-orange);}
+  .hero-step.payback.danger .big{color:var(--wc-error);}
+  .hero-step.return .big.positive{color:var(--wc-success);}
+  .hero-step.return .big.negative{color:var(--wc-error);}
+
+  /* Sub-metrics inside the Return step */
+  .return-grid{
+    display:grid;grid-template-columns:1fr 1fr;
+    gap:0;
+    border-top:1px solid var(--wc-border-subtle);
+    padding-top:10px;
+    align-self:start;
+  }
+  .return-grid .sub{
+    padding:0 14px;
+    border-left:1px solid var(--wc-border-subtle);
+  }
+  .return-grid .sub:first-child{border-left:none;padding-left:0}
+  .return-grid .sub .k{
+    font-size:10.5px;color:var(--wc-fg-3);
+    text-transform:uppercase;letter-spacing:.6px;
+    font-weight:var(--wc-w-semibold);
+    margin-bottom:3px;
+  }
+  .return-grid .sub .v{
+    font-family:var(--wc-font-display);
+    font-size:16px;font-weight:var(--wc-w-bold);
+    color:var(--wc-fg-1);
+    font-variant-numeric:tabular-nums;
+    letter-spacing:var(--wc-tracking-tight);
+  }
+  .return-grid .sub .v.positive{color:var(--wc-success)}
+  .return-grid .sub .v.negative{color:var(--wc-error)}
+
+  /* Connecting arrow */
+  .hero-arrow{
+    color:var(--wc-ink-200);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .hero-arrow svg{width:32px;height:18px;display:block}
+
+  /* Payback two-line caption (nominal + actualised) */
+  .payback-detail{
+    display:flex;flex-direction:column;gap:3px;
+    border-top:1px solid var(--wc-border-subtle);
+    padding-top:10px;
+    align-self:start;
+  }
+  .payback-detail .pd-row{
+    display:flex;justify-content:space-between;
+    font-size:11.5px;line-height:1.4;
+  }
+  .payback-detail .pd-row .k{color:var(--wc-fg-2);font-weight:var(--wc-w-medium)}
+  .payback-detail .pd-row .v{font-weight:var(--wc-w-semibold);font-variant-numeric:tabular-nums}
+
+  /* ── LAYOUT ─────────────────────────────────────────────── */
+  /* 3-column config strip: Configuration | Investissement | Hypothèses */
+  .config-row{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:20px;align-items:stretch;
+    margin-bottom:20px;
+  }
+  .config-row > .panel{margin:0;display:flex;flex-direction:column}
+  .config-row .panel + .panel{margin-top:0}
+  @media(max-width:1100px){
+    .config-row{grid-template-columns:1fr 1fr;gap:16px}
+    .config-row > .panel:nth-child(3){grid-column:1 / -1}
+  }
+  @media(max-width:720px){
+    .config-row{grid-template-columns:1fr}
+    .config-row > .panel:nth-child(3){grid-column:auto}
+  }
+
+  .panel{
+    background:var(--wc-surface-card);
+    border:1px solid var(--wc-border-subtle);
+    border-radius:var(--wc-radius-lg);
+    padding:24px;
+  }
+  .panel+.panel{margin-top:16px}
+  .panel-head{
+    font-family:var(--wc-font-display);
+    font-size:13px;color:var(--wc-brand-orange);
+    text-transform:uppercase;letter-spacing:1.5px;
+    font-weight:var(--wc-w-bold);
+    margin:0 0 18px;
+    line-height:1.2;
+  }
+
+  /* ── FIELDS ─────────────────────────────────────────────── */
+  .field{margin-bottom:14px}
+  .field:last-child{margin-bottom:0}
+
+  /* Read-only computed line: label — value (no boxed input, no dividers) */
+  .readout{
+    display:flex;justify-content:space-between;align-items:baseline;
+    padding:7px 0;
+    font-size:13px;
+  }
+  .readout .lbl{color:var(--wc-fg-2);font-weight:var(--wc-w-medium)}
+  .readout .val{
+    font-family:var(--wc-font-display);
+    font-weight:var(--wc-w-semibold);color:var(--wc-fg-1);
+    font-variant-numeric:tabular-nums;
+  }
+  .readout .val .u{
+    color:var(--wc-fg-3);font-size:11.5px;
+    font-weight:var(--wc-w-medium);margin-left:4px;
+  }
+  .readout.total{
+    border-top:1px solid var(--wc-border-subtle);
+    margin-top:8px;padding-top:12px;
+  }
+  .readout.total .lbl{color:var(--wc-fg-1);font-weight:var(--wc-w-bold);font-size:13.5px}
+  .readout.total .val{
+    font-size:18px;color:var(--wc-ink-800);
+    letter-spacing:var(--wc-tracking-tight);
+  }
+
+  /* Compact editable field — inline label + small input, no dividers */
+  .field-compact{
+    display:flex;justify-content:space-between;align-items:center;
+    gap:12px;padding:6px 0;
+  }
+  .field-compact > label{
+    flex:1;font-size:13px;color:var(--wc-fg-1);
+    font-weight:var(--wc-w-medium);margin:0;
+  }
+  .field-compact .input{
+    width:120px;height:34px;flex-shrink:0;
+  }
+  .field-compact .input input[type=number]{
+    font-size:13px;padding:0 10px;
+  }
+  .field-compact .input .unit{padding:0 10px;font-size:11.5px}
+  .field label{
+    display:flex;justify-content:space-between;align-items:baseline;
+    font-size:13px;color:var(--wc-fg-1);
+    font-weight:var(--wc-w-medium);
+    margin-bottom:6px;
+  }
+  .field label .help{
+    color:var(--wc-fg-3);font-size:11px;
+    font-weight:var(--wc-w-regular);font-style:normal;
+  }
+  .field .input{
+    display:flex;align-items:stretch;
+    background:var(--wc-ink-0);
+    border:1.5px solid var(--wc-ink-200);
+    border-radius:var(--wc-radius-md);
+    overflow:hidden;
+    transition:border-color var(--wc-duration-fast) var(--wc-easing),
+               box-shadow var(--wc-duration-fast) var(--wc-easing);
+    height:42px;
+  }
+  .field .input:focus-within{
+    border-color:var(--wc-brand-orange);
+    box-shadow:0 0 0 4px var(--wc-orange-tint-12);
+  }
+  .field input[type=number]{
+    flex:1;border:none;outline:none;
+    padding:0 14px;
+    font:var(--wc-w-semibold) 14px/1 var(--wc-font-display);
+    background:transparent;
+    color:var(--wc-fg-1);
+    text-align:right;
+    font-variant-numeric:tabular-nums;
+    -moz-appearance:textfield;
+    min-width:0;
+  }
+  .field input[type=number]::-webkit-inner-spin-button{opacity:.5}
+  .field .unit{
+    padding:0 14px;
+    color:var(--wc-fg-2);font-size:12px;
+    font-weight:var(--wc-w-medium);
+    border-left:1px solid var(--wc-ink-200);
+    display:flex;align-items:center;
+    background:var(--wc-ink-75);
+    white-space:nowrap;flex-shrink:0;
+  }
+  .field .computed{
+    padding:0 14px;text-align:right;
+    color:var(--wc-fg-1);
+    font:var(--wc-w-semibold) 14px/1 var(--wc-font-display);
+    flex:1;
+    background:var(--wc-ink-75);
+    font-variant-numeric:tabular-nums;
+    display:flex;align-items:center;justify-content:flex-end;
+    min-width:0;
+  }
+  .sep{
+    border:none;border-top:1px solid var(--wc-border-subtle);
+    margin:18px 0;
+  }
+
+  .invest-total{margin-top:6px}
+  .invest-total label{font-weight:var(--wc-w-bold);color:var(--wc-fg-1);font-size:14px}
+  .invest-total .input{border-color:var(--wc-ink-800);border-width:2px;height:54px}
+  .invest-total .computed{
+    font-family:var(--wc-font-display);
+    font-size:20px;
+    font-weight:var(--wc-w-bold);
+    color:var(--wc-ink-800);
+    background:var(--wc-ink-100);
+    letter-spacing:var(--wc-tracking-tight);
+  }
+  .invest-total .unit{background:var(--wc-ink-100);font-weight:var(--wc-w-semibold);color:var(--wc-fg-1)}
+
+  /* ── SCENARIO SWITCH ────────────────────────────────────── */
+  .scenario-switch{
+    display:flex;
+    background:var(--wc-ink-100);
+    border:1px solid var(--wc-border-subtle);
+    border-radius:var(--wc-radius-md);
+    overflow:hidden;
+    margin-bottom:8px;
+    padding:4px;gap:4px;
+  }
+  .scenario-btn{
+    flex:1;padding:10px 14px;
+    border:none;background:transparent;
+    font:var(--wc-w-semibold) 12.5px/1.3 var(--wc-font-display);
+    color:var(--wc-fg-2);
+    cursor:pointer;
+    border-radius:calc(var(--wc-radius-md) - 4px);
+    transition:all var(--wc-duration-fast) var(--wc-easing);
+    display:inline-flex;align-items:center;justify-content:center;gap:7px;
+    letter-spacing:.2px;
+  }
+  .scenario-btn .ico{width:14px;height:14px;flex-shrink:0;display:inline-block}
+  .scenario-btn .ico path,
+  .scenario-btn .ico circle,
+  .scenario-btn .ico line{
+    stroke:currentColor;stroke-width:1.6;
+    fill:none;stroke-linecap:round;stroke-linejoin:round;
+  }
+  .scenario-btn.active .ico path[data-fill],
+  .scenario-btn.active .ico circle[data-fill]{fill:currentColor}
+  .scenario-btn.active{
+    background:var(--wc-ink-800);
+    color:var(--wc-ink-0);
+    box-shadow:0 2px 6px rgba(20,36,41,.18);
+  }
+  .scenario-btn:not(.active):hover{
+    background:var(--wc-ink-0);
+    color:var(--wc-fg-1);
+  }
+  .scenario-desc{
+    font-size:11.5px;color:var(--wc-fg-3);
+    font-weight:var(--wc-w-regular);
+    margin-bottom:4px;font-style:italic;
+  }
+
+  /* ── COLLAPSIBLE ─────────────────────────────────────────── */
+  .collapse-toggle{
+    display:flex;justify-content:space-between;align-items:center;
+    cursor:pointer;user-select:none;width:100%;
+  }
+  .collapse-toggle .arrow{
+    font-size:10px;color:var(--wc-fg-3);
+    transition:transform var(--wc-duration-base) var(--wc-easing);
+    width:20px;text-align:center;
+  }
+  .collapse-body{
+    overflow:hidden;
+    transition:max-height var(--wc-duration-slow) var(--wc-easing),
+               opacity var(--wc-duration-base);
+    max-height:0;opacity:0;
+  }
+  /* Generous max-height: dynamic cost breakdown can exceed 560px when
+     all sections render. Browsers only paint up to actual content height,
+     so a large ceiling is safe and the transition still feels natural. */
+  .collapse-body.open{max-height:1600px;opacity:1}
+
+  /* Native <button> reset for the collapse toggles so we keep the
+     visual design but get keyboard / focus / role for free. */
+  button.collapse-toggle{
+    background:none;border:none;padding:0;margin:0;
+    font:inherit;color:inherit;text-align:left;
+  }
+
+  .info-block{font-size:12.5px;color:var(--wc-fg-2);line-height:1.9}
+  .info-block .row{display:flex;justify-content:space-between;align-items:baseline}
+  .info-block .val{
+    font-weight:var(--wc-w-semibold);color:var(--wc-fg-1);
+    font-variant-numeric:tabular-nums;
+  }
+  .info-block .section-label{
+    font-family:var(--wc-font-display);
+    font-size:12px;color:var(--wc-brand-orange);
+    text-transform:uppercase;letter-spacing:1.1px;
+    font-weight:var(--wc-w-bold);margin:16px 0 8px;
+  }
+  .info-block .section-label:first-child{margin-top:0}
+  .info-block .note{
+    font-size:11.5px;color:var(--wc-fg-3);
+    font-style:italic;margin-top:4px;line-height:1.5;
+  }
+
+  /* ── CHART ──────────────────────────────────────────────── */
+  .chart-wrap{
+    background:var(--wc-surface-card);
+    border:1px solid var(--wc-border-subtle);
+    border-radius:var(--wc-radius-lg);
+    padding:24px;position:relative;
+  }
+  .chart-head{
+    display:flex;justify-content:space-between;align-items:center;
+    flex-wrap:wrap;gap:10px;margin-bottom:14px;
+  }
+  .chart-head .panel-head{margin:0}
+  .chart-legend{
+    font-size:11.5px;color:var(--wc-fg-2);
+    display:flex;gap:18px;flex-wrap:wrap;
+    font-weight:var(--wc-w-medium);
+  }
+  .chart-legend span{display:inline-flex;align-items:center;gap:6px}
+  .chart-legend i{display:inline-block;width:10px;height:10px;border-radius:2px}
+  .chart-legend i.dash{
+    width:14px;height:0;border:0;
+    border-top:2px dashed var(--wc-brand-orange);
+    border-radius:0;background:none;align-self:center;
+  }
+  svg.chart{
+    width:100%;height:280px;display:block;
+    font:var(--wc-w-medium) 11px/1 var(--wc-font-display);
+  }
+  .chart-tooltip{
+    position:absolute;pointer-events:none;
+    background:var(--wc-ink-1000);color:var(--wc-fg-on-dark);
+    border-radius:var(--wc-radius-md);
+    padding:12px 16px;
+    font:var(--wc-w-medium) 11.5px/1.6 var(--wc-font-display);
+    white-space:nowrap;opacity:0;
+    transition:opacity var(--wc-duration-fast);
+    z-index:10;
+    box-shadow:var(--wc-shadow-modal);
+  }
+  .chart-tooltip .tt-year{
+    font-weight:var(--wc-w-bold);
+    margin-bottom:4px;font-size:12.5px;
+    color:var(--wc-brand-turquoise-2);
+  }
+  .chart-tooltip .tt-row{
+    display:flex;justify-content:space-between;gap:18px;
+  }
+  .chart-tooltip .tt-label{opacity:.65}
+  .chart-tooltip .tt-val{
+    font-weight:var(--wc-w-semibold);
+    font-variant-numeric:tabular-nums;
+  }
+  .chart-tooltip .tt-pos{color:#6dd89e}
+  .chart-tooltip .tt-neg{color:#f59999}
+
+  /* ── ACCESSIBILITY ──────────────────────────────────────── */
+  button:focus-visible,
+  input:focus-visible,
+  .collapse-toggle:focus-visible{
+    outline:2px solid var(--wc-brand-orange);
+    outline-offset:2px;
+    border-radius:var(--wc-radius-xs);
+  }
+
+  /* ── TABLE ──────────────────────────────────────────────── */
+  .table-wrap{
+    margin-top:24px;
+    background:var(--wc-surface-card);
+    border:1px solid var(--wc-border-subtle);
+    border-radius:var(--wc-radius-lg);
+    padding:24px;
+  }
+  table.years{
+    width:100%;border-collapse:collapse;
+    font-size:11.5px;
+    font-variant-numeric:tabular-nums;
+  }
+  table.years th,table.years td{
+    padding:8px 6px;
+    border-bottom:1px solid var(--wc-border-subtle);
+    text-align:right;white-space:nowrap;
+  }
+  table.years th:first-child,
+  table.years td:first-child{padding-left:8px}
+  table.years th:first-child,
+  table.years td:first-child{
+    text-align:left;color:var(--wc-fg-1);
+    font-weight:var(--wc-w-medium);
+  }
+  /* Body row-headers (<th scope="row">) inherit the same look as the
+     plain <td> labels they replaced, so the design is unchanged. */
+  table.years tbody th{
+    font-weight:var(--wc-w-medium);
+    color:var(--wc-fg-1);
+    text-transform:none;letter-spacing:0;
+    background:transparent;font-size:inherit;
+  }
+  table.years thead th{
+    background:var(--wc-ink-75);
+    color:var(--wc-fg-2);
+    text-transform:uppercase;letter-spacing:.6px;
+    font-size:10.5px;
+    font-weight:var(--wc-w-bold);
+    font-family:var(--wc-font-display);
+  }
+  /* Visually hidden helper for screen-reader-only labels */
+  .sr-only{
+    position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+    overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+  }
+  table.years td.neg{color:var(--wc-error);font-weight:var(--wc-w-semibold)}
+  table.years td.pos{color:var(--wc-success);font-weight:var(--wc-w-semibold)}
+  table.years tr.sep-row td{border-bottom:2px solid var(--wc-ink-200)}
+  table.years tr.spacer td{height:6px;padding:0;border:none}
+  table.years tbody tr:hover td{background:var(--wc-ink-75)}
+
+  /* ── FOOTER ─────────────────────────────────────────────── */
+  footer.app-foot{
+    margin-top:40px;color:var(--wc-fg-3);
+    font-size:11.5px;text-align:center;
+    padding-top:20px;
+    border-top:1px solid var(--wc-border-subtle);
+    font-weight:var(--wc-w-regular);
+  }
+  footer.app-foot a{
+    color:var(--wc-brand-orange);
+    text-decoration:none;
+    font-weight:var(--wc-w-semibold);
+  }
+  footer.app-foot a:hover{text-decoration:underline}
+
+  @media print{
+    body{background:#fff}
+    .actions{display:none!important}
+    .chart-tooltip{display:none!important}
+    .panel,.kpi,.chart-wrap,.table-wrap{
+      box-shadow:none;page-break-inside:avoid;
+    }
+    .collapse-body{
+      max-height:none!important;
+      opacity:1!important;
+      overflow:visible!important;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="app-head">
+    <div class="header-left">
+      <img class="logo-wordmark" src="assets/wechip-wordmark-cover.png" alt="WECHIP">
+      <div class="header-text">
+        <div class="eyebrow">Calculateur</div>
+        <div class="title">Rentabilité · Modèle TCO &amp; ROI</div>
+      </div>
+    </div>
+    <div class="actions">
+      <button id="btnShare" type="button" aria-label="Copier un lien partageable de cette configuration">Partager</button>
+      <button id="btnReset" type="button" aria-label="Réinitialiser tous les paramètres aux valeurs par défaut">Réinitialiser</button>
+      <button id="btnPrint" type="button" aria-label="Imprimer ou enregistrer en PDF">Imprimer / PDF</button>
+    </div>
+  </header>
+
+  <!-- HERO STORY: Investment → Payback → 10-Year Return -->
+  <section class="hero-banner" aria-label="Synthèse financière" aria-live="polite">
+    <div class="hero-step invest">
+      <div class="step-tag"><span class="num">1</span> Investissement initial</div>
+      <div class="big" id="kpiInvest">—<span class="unit">CHF</span></div>
+      <div class="caption">Machine + installation, HT, après rabais commercial</div>
+    </div>
+    <div class="hero-arrow" aria-hidden="true">
+      <svg viewBox="0 0 32 18" fill="none"><path d="M2 9 H28 M22 3 L28 9 L22 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="hero-step payback" id="heroPayback">
+      <div class="step-tag"><span class="num">2</span> Période de récupération</div>
+      <div class="big" id="kpiPayback">—</div>
+      <div class="payback-detail" id="paybackDetail"></div>
+    </div>
+    <div class="hero-arrow" aria-hidden="true">
+      <svg viewBox="0 0 32 18" fill="none"><path d="M2 9 H28 M22 3 L28 9 L22 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="hero-step return">
+      <div class="step-tag"><span class="num">3</span> Rendement à 10 ans</div>
+      <div class="big" id="kpiProfit10">—<span class="unit">CHF</span></div>
+      <div class="return-grid">
+        <div class="sub"><div class="k">ROI</div><div class="v" id="kpiROI">—</div></div>
+        <div class="sub"><div class="k">VAN (5 %)</div><div class="v" id="kpiNPV10">—</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3-COLUMN CONFIG STRIP -->
+  <div class="config-row">
+      <div class="panel">
+        <div class="panel-head">Configuration</div>
+        <div class="field">
+          <label>Modèle</label>
+          <div class="scenario-switch" role="group" aria-label="Choix du modèle de machine">
+            <button class="scenario-btn active" id="btnFilaire" type="button" aria-pressed="true">
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M13 2 L4 14 H11 L9 22 L20 9 H13 Z" data-fill/>
+              </svg>
+              Filaire
+            </button>
+            <button class="scenario-btn" id="btnSolaire" type="button" aria-pressed="false">
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="4" data-fill/>
+                <line x1="12" y1="2"  x2="12" y2="5"/>
+                <line x1="12" y1="19" x2="12" y2="22"/>
+                <line x1="2"  y1="12" x2="5"  y2="12"/>
+                <line x1="19" y1="12" x2="22" y2="12"/>
+                <line x1="4.9" y1="4.9"  x2="7"  y2="7"/>
+                <line x1="17"  y1="17"   x2="19.1" y2="19.1"/>
+                <line x1="4.9" y1="19.1" x2="7"  y2="17"/>
+                <line x1="17"  y1="7"    x2="19.1" y2="4.9"/>
+              </svg>
+              Solaire
+            </button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Modules <span class="help">1 à 8 · 1 module = 2 colonnes</span></label>
+          <div class="input">
+            <input type="number" id="modulesInput" min="1" max="8" step="1" value="3" inputmode="numeric" autocomplete="off">
+            <span class="unit">mod.</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Revenu par colonne / jour</label>
+          <div class="input">
+            <input type="number" id="revPerColDay" min="1" max="30" step="0.5" value="6" inputmode="decimal" autocomplete="off">
+            <span class="unit">CHF</span>
+          </div>
+        </div>
+        <div class="readout"><span class="lbl">Soit en colonnes</span><span class="val"><span id="colsReadout">6</span><span class="u">col.</span></span></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">Investissement <span style="font-weight:var(--wc-w-medium);letter-spacing:0;text-transform:none;font-size:11px;color:var(--wc-fg-3)">HT</span></div>
+        <div class="readout"><span class="lbl">Prix machine brut</span><span class="val"><span id="priceBrut">—</span><span class="u">CHF</span></span></div>
+        <div class="field-compact">
+          <label for="discountPct">Rabais commercial</label>
+          <div class="input">
+            <input type="number" id="discountPct" min="0" max="80" step="5" value="30" inputmode="numeric" autocomplete="off">
+            <span class="unit">%</span>
+          </div>
+        </div>
+        <div class="readout"><span class="lbl">Prix machine NET</span><span class="val"><span id="priceNet">—</span><span class="u">CHF</span></span></div>
+        <div class="readout"><span class="lbl">Installation &amp; livraison</span><span class="val"><span id="installCost">—</span><span class="u">CHF</span></span></div>
+        <div class="readout total"><span class="lbl">Investissement total</span><span class="val"><span id="investTotal">—</span><span class="u">CHF</span></span></div>
+      </div>
+
+      <div class="panel">
+        <button type="button" class="collapse-toggle" id="hypoToggle" aria-expanded="false" aria-controls="hypoBody">
+          <span class="panel-head" style="margin:0">Hypothèses d'exploitation</span>
+          <span class="arrow" aria-hidden="true">▶</span>
+        </button>
+        <div class="collapse-body" id="hypoBody">
+          <div style="margin-top:16px">
+            <div class="scenario-switch" role="group" aria-label="Choix du scénario d'exploitation">
+              <button class="scenario-btn active" data-scenario="growth" id="btnGrowth" type="button" aria-pressed="true">
+                <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3 17 L9 11 L13 15 L21 7" />
+                  <path d="M15 7 L21 7 L21 13" />
+                </svg>
+                Croissance
+              </button>
+              <button class="scenario-btn" data-scenario="steady" id="btnSteady" type="button" aria-pressed="false">
+                <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 18 C 8 18, 8 6, 12 6 C 16 6, 16 18, 20 18" />
+                </svg>
+                Maturité
+              </button>
+            </div>
+            <div class="scenario-desc" id="scenarioDesc">Montée progressive du taux de rotation sur 5 ans</div>
+          </div>
+          <div class="info-block" style="margin-top:14px">
+            <div class="section-label">Exploitation</div>
+            <div class="row"><span>Jours d'exploitation</span><span class="val">303 j/an</span></div>
+            <div class="row"><span>Taux d'actualisation</span><span class="val">5 %</span></div>
+            <div class="row"><span>Remplacement électronique</span><span class="val">Année 6</span></div>
+            <div class="section-label">Modèle post-breakeven</div>
+            <div class="row"><span>Avant breakeven</span><span class="val">100 % client</span></div>
+            <div class="row"><span>Après breakeven</span><span class="val">50 / 50</span></div>
+            <div class="note">Maintenance <em>et</em> remplacement électronique couverts par WECHIP dès que le partage est actif</div>
+            <div class="section-label">Taux d'exploitation (% capacité)</div>
+            <div id="rotationDetail"></div>
+          </div>
+        </div>
+      </div>
+  </div>
+
+  <!-- FULL-WIDTH CHART -->
+  <div class="chart-wrap">
+    <div class="chart-head">
+      <div class="panel-head">Projection 10 ans</div>
+      <div class="chart-legend" aria-label="Légende du graphique">
+        <span><i style="background:var(--wc-ink-1000)"></i> Flux cumulé</span>
+        <span><i style="background:var(--wc-brand-orange)"></i> Revenus</span>
+        <span><i style="background:var(--wc-brand-turquoise)"></i> Coûts</span>
+        <span><i class="dash" aria-hidden="true"></i> ROI</span>
+      </div>
+    </div>
+    <svg class="chart" id="chart" viewBox="0 0 800 280" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Projection 10 ans des revenus, coûts et flux cumulé"></svg>
+    <div class="chart-tooltip" id="tooltip"></div>
+  </div>
+
+  <!-- FULL-WIDTH TABLE (sits below the layout grid) -->
+  <div class="table-wrap">
+    <div class="panel-head">Détail année par année</div>
+    <button type="button" class="collapse-toggle" id="costToggle"
+         aria-expanded="false" aria-controls="costBody"
+         style="margin-bottom:12px;padding:10px 14px;background:var(--wc-ink-75);border:1px solid var(--wc-border-subtle);border-radius:var(--wc-radius-md);width:100%">
+      <span style="font-size:12px;color:var(--wc-fg-1);font-weight:var(--wc-w-semibold)">Composition des coûts totaux</span>
+      <span class="arrow" aria-hidden="true">▶</span>
+    </button>
+    <div class="collapse-body" id="costBody">
+      <div class="info-block" id="costBreakdown"
+           style="margin-bottom:16px;padding:16px 18px;background:var(--wc-ink-75);border-radius:var(--wc-radius-md);border:1px solid var(--wc-border-subtle)"></div>
+    </div>
+    <table class="years" id="yearTable"></table>
+  </div>
+
+  <footer class="app-foot">
+    Confidentiel WECHIP · Tous les montants sont exprimés HT · Modèle indicatif.
+    <a href="mailto:contact@wechip.ch">contact@wechip.ch</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+  // ─────────────────────────────────────────────────────────────
+  //  CONSTANTES DU MODÈLE FINANCIER
+  // ─────────────────────────────────────────────────────────────
+  const DAYS         = 303;
+  const NPV_RATE     = 0.05;
+  const REPL_YEAR    = 6;
+  const WECHIP_SHARE = 0.50;
+  const HORIZON      = 10;
+  const START_YEAR   = new Date().getFullYear();
+
+  const ROT_GROWTH = [0, 0.10, 0.25, 0.60, 0.70, 0.80, 0.85, 0.85, 0.85, 0.85, 0.85];
+  const ROT_STEADY = [0, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85];
+
+  const MODELS = {
+    filaire: {
+      label:     'Filaire',
+      base:      { brut: 19000, install: 1250, opex: 1200, replCost: 1500 },
+      perModule: { brut:  5500, install:  500, opex:  100, replCost:  250 }
+    },
+    solaire: {
+      label:     'Solaire',
+      base:      { brut: 22000, install: 1500, opex: 1200, replCost: 1500 },
+      perModule: { brut:  6000, install:  500, opex:  200, replCost:  250 }
+    }
+  };
+
+  let currentScenario = 'growth';
+  let currentModel    = 'filaire';
+  const getRotation = () => currentScenario === 'steady' ? ROT_STEADY : ROT_GROWTH;
+
+  function pricingFromModules(m){
+    const extra = Math.max(0, m - 2);
+    const cfg   = MODELS[currentModel] || MODELS.filaire;
+    const out   = {};
+    for (const k of ['brut', 'install', 'opex', 'replCost']) {
+      out[k] = cfg.base[k] + extra * cfg.perModule[k];
+    }
+    return out;
+  }
+
+  const $ = id => document.getElementById(id);
+
+  // Cache formatters — instantiating Intl.NumberFormat per call is expensive
+  // and the calculator re-renders on every keystroke.
+  const NUM_FMT_CACHE = new Map();
+  const numFmt = d => {
+    let f = NUM_FMT_CACHE.get(d);
+    if (!f) {
+      f = new Intl.NumberFormat('fr-CH', { minimumFractionDigits: d, maximumFractionDigits: d });
+      NUM_FMT_CACHE.set(d, f);
+    }
+    return f;
+  };
+  const fmt = (n, o={}) => {
+    if (n == null || !Number.isFinite(n)) return '—';
+    const d = o.d || 0;
+    // Normalize -0 → 0 so Intl doesn't render "-0 CHF" for tiny rounded values.
+    const v = (d === 0 && n > -0.5 && n < 0.5) ? 0 : n;
+    const s = numFmt(d).format(v);
+    return o.unit ? s + ' ' + o.unit : s;
+  };
+  const pct = (n, d=1) => (n*100).toFixed(d).replace('.', ',') + ' %';
+
+  function clampInput(id, min, max, fallback, step){
+    const el = $(id);
+    let v = parseFloat(el.value);
+    if (isNaN(v)) v = fallback;
+    v = Math.max(min, Math.min(max, v));
+    if (step && step > 0) v = Math.round(v / step) * step;
+    el.value = v;
+    return v;
+  }
+
+  function read(){
+    const modules      = clampInput('modulesInput', 1, 8, 3, 1);
+    const cols         = modules * 2;
+    const revPerColDay = clampInput('revPerColDay', 0.5, 30, 6);
+    const dPct         = clampInput('discountPct',  0, 80, 30) / 100;
+
+    const pr        = pricingFromModules(modules);
+    const brutTotal = pr.brut + pr.install;
+    const netTotal  = Math.max(0, brutTotal * (1 - dPct));
+    const ratio      = pr.brut / brutTotal;
+    const machineNet = Math.round(netTotal * ratio);
+    const installNet = Math.round(netTotal - machineNet);
+
+    return {
+      cols, revPerColDay, modules,
+      priceBrut: pr.brut,
+      machineNet, installNet, investTotal: netTotal,
+      opex: pr.opex, replCost: pr.replCost
+    };
+  }
+
+  function compute(p){
+    const rot = getRotation();
+    let hCum = 0, beNominal = -1;
+    for (let y = 1; y <= HORIZON; y++) {
+      const rev  = p.cols * p.revPerColDay * rot[y] * DAYS;
+      const cost = (y === 1 ? p.investTotal : 0) + p.opex + (y === REPL_YEAR ? p.replCost : 0);
+      hCum += rev - cost;
+      if (hCum >= 0 && beNominal < 0) beNominal = y;
+    }
+    const years = [];
+    let cum = 0, cumNPV = 0, beActualise = -1;
+    for (let y = 1; y <= HORIZON; y++) {
+      const revGross = p.cols * p.revPerColDay * rot[y] * DAYS;
+      const post     = beNominal > 0 && y > beNominal;
+      const share    = post ? revGross * WECHIP_SHARE : 0;
+      const revNet   = revGross - share;
+      const cost     = (y === 1 ? p.investTotal : 0)
+                     + (post ? 0 : p.opex)
+                     + (y === REPL_YEAR && !post ? p.replCost : 0);
+      const flow = revNet - cost;
+      cum    += flow;
+      cumNPV += flow / Math.pow(1 + NPV_RATE, y);
+      if (cumNPV >= 0 && beActualise < 0) beActualise = y;
+      years.push({ y, rot: rot[y], revGross, share, revNet, cost, flow, cum, cumNPV, post, isBE: y === beNominal });
+    }
+    return { years, beNominal, beActualise };
+  }
+
+  function renderInputs(p){
+    $('colsReadout').textContent = p.cols;
+    $('priceBrut').textContent = fmt(p.priceBrut);
+    $('priceNet').textContent = fmt(p.machineNet);
+    $('installCost').textContent = fmt(p.installNet);
+    $('investTotal').textContent = fmt(p.investTotal);
+  }
+
+  function renderKPIs(p,m){
+    const cum10 = m.years[HORIZON-1].cum;
+    const npv10 = m.years[HORIZON-1].cumNPV;
+    const beyond = `> ${HORIZON} ans`;
+
+    // Step 1 — Investment
+    $('kpiInvest').innerHTML = fmt(Math.round(p.investTotal)) + '<span class="unit">CHF</span>';
+
+    // Step 2 — Payback (big number = nominal year, mini-rows = nominal + actualised)
+    const payEl = $('kpiPayback');
+    payEl.textContent = m.beNominal > 0 ? `Année ${m.beNominal}` : beyond;
+    const payHero = $('heroPayback');
+    payHero.classList.toggle('danger', m.beNominal <= 0);
+
+    const detail = [];
+    detail.push(
+      `<div class="pd-row"><span class="k">Nominal</span><span class="v" style="color:${m.beNominal>0?'var(--wc-success)':'var(--wc-error)'}">${m.beNominal>0?'Année '+m.beNominal:beyond}</span></div>`
+    );
+    const actColor = m.beActualise > 0
+      ? (m.beActualise <= 7 ? 'var(--wc-success)' : 'var(--wc-brand-orange)')
+      : 'var(--wc-error)';
+    detail.push(
+      `<div class="pd-row"><span class="k">Actualisé (VAN)</span><span class="v" style="color:${actColor}">${m.beActualise>0?'Année '+m.beActualise:beyond}</span></div>`
+    );
+    $('paybackDetail').innerHTML = detail.join('');
+
+    // Step 3 — 10-year return
+    const profitEl = $('kpiProfit10');
+    profitEl.innerHTML = fmt(Math.round(cum10)) + '<span class="unit">CHF</span>';
+    profitEl.classList.toggle('positive', cum10 >= 0);
+    profitEl.classList.toggle('negative', cum10 < 0);
+
+    const roiEl = $('kpiROI');
+    roiEl.textContent = p.investTotal > 0 ? pct(cum10/p.investTotal) : '—';
+    roiEl.classList.toggle('positive', cum10 >= 0);
+    roiEl.classList.toggle('negative', cum10 < 0);
+
+    const npvEl = $('kpiNPV10');
+    npvEl.textContent = fmt(Math.round(npv10));
+    npvEl.classList.toggle('positive', npv10 >= 0);
+    npvEl.classList.toggle('negative', npv10 < 0);
+  }
+
+  let chartData = null;
+  let chartXs = null;
+
+  function renderChart(p,m){
+    const svg=$('chart');
+    const W=800,H=280,ml=68,mr=18,mt=18,mb=36;
+    const iW=W-ml-mr, iH=H-mt-mb;
+    const colW = iW/HORIZON;
+    const xs=m.years.map((_,i)=>ml+(i+.5)*colW);
+    chartXs = xs;
+    chartData = m.years;
+    const cums=m.years.map(y=>y.cum), revs=m.years.map(y=>y.revNet), costs=m.years.map(y=>y.cost);
+    const all=[...cums,...revs,...costs,0];
+    const yMin=Math.min(...all), yMax=Math.max(...all), pad=(yMax-yMin)*.10||1;
+    const lo=yMin-pad, hi=yMax+pad;
+    const yPx=v=>mt+iH-(v-lo)/(hi-lo)*iH;
+
+    const bW=colW*.30;
+    let bars='';
+    for(let i=0;i<HORIZON;i++){
+      const cx=xs[i], y0=yPx(0);
+      const rt=yPx(revs[i]);
+      bars+=`<rect class="bar" data-i="${i}" x="${(cx-bW-1).toFixed(1)}" y="${Math.min(rt,y0).toFixed(1)}" width="${bW.toFixed(1)}" height="${Math.abs(rt-y0).toFixed(1)}" fill="#FF7100" opacity=".88" rx="3"/>`;
+      const ct=yPx(-costs[i]);
+      bars+=`<rect class="bar" data-i="${i}" x="${(cx+1).toFixed(1)}" y="${Math.min(ct,y0).toFixed(1)}" width="${bW.toFixed(1)}" height="${Math.abs(ct-y0).toFixed(1)}" fill="#8ECFD3" opacity=".85" rx="3"/>`;
+    }
+
+    let hitZones='';
+    for(let i=0;i<HORIZON;i++){
+      hitZones+=`<rect class="hit-zone" data-i="${i}" x="${(ml+i*colW).toFixed(1)}" y="${mt}" width="${colW.toFixed(1)}" height="${iH}" fill="transparent" style="cursor:crosshair"/>`;
+    }
+
+    // Adaptive Y-axis precision: when the range is small (e.g. tiny machines
+    // or all-loss configs), kCHF rounded to integers collapses every tick
+    // label to "0". Pick decimals so neighboring ticks stay distinguishable.
+    const tickStep = (hi - lo) / 5 / 1000;
+    const yDecimals = tickStep >= 5 ? 0 : tickStep >= 0.5 ? 1 : 2;
+    let grid='',yL='';
+    for(let i=0;i<=5;i++){
+      const v=lo+(hi-lo)*i/5, yp=yPx(v);
+      grid+=`<line x1="${ml}" y1="${yp}" x2="${W-mr}" y2="${yp}" stroke="#E9F0F0"/>`;
+      yL+=`<text x="${ml-10}" y="${yp+4}" text-anchor="end" fill="#74787A" font-size="10" font-weight="500">${(v/1000).toFixed(yDecimals)}</text>`;
+    }
+    // Y-axis title (currency unit)
+    yL+=`<text x="${ml-10}" y="${mt-6}" text-anchor="end" fill="#142429" font-size="10" font-weight="700" letter-spacing=".4">kCHF</text>`;
+    grid+=`<line x1="${ml}" y1="${yPx(0)}" x2="${W-mr}" y2="${yPx(0)}" stroke="#C3C9CC" stroke-width="1.2"/>`;
+
+    let xL='';
+    for(let i=0;i<HORIZON;i++) xL+=`<text x="${xs[i]}" y="${H-mb+20}" text-anchor="middle" fill="#74787A" font-size="10.5" font-weight="500">A${i+1}</text>`;
+
+    let pm='';
+    if(m.beNominal>0 && m.beNominal<=HORIZON){
+      const px=xs[m.beNominal-1];
+      pm=`<line x1="${px}" y1="${mt}" x2="${px}" y2="${H-mb}" stroke="#FF7100" stroke-dasharray="4 3" stroke-width="1.5"/>
+        <text x="${px}" y="${mt-4}" text-anchor="middle" fill="#FF7100" font-size="10.5" font-weight="700">ROI</text>`;
+    }
+
+    const lastIdx = HORIZON - 1;
+    const areaPath = `M${xs[0].toFixed(1)},${yPx(0).toFixed(1)} ` +
+      cums.map((v,i)=>`L${xs[i].toFixed(1)},${yPx(v).toFixed(1)}`).join(' ') +
+      ` L${xs[lastIdx].toFixed(1)},${yPx(0).toFixed(1)} Z`;
+    const linePath=cums.map((v,i)=>`${i===0?'M':'L'}${xs[i].toFixed(1)},${yPx(v).toFixed(1)}`).join(' ');
+    let dots='';
+    cums.forEach((v,i)=>{dots+=`<circle class="dot" data-i="${i}" cx="${xs[i]}" cy="${yPx(v)}" r="3.5" fill="#fff" stroke="#142429" stroke-width="2"/>`;});
+
+    const hoverLine = `<line id="hoverLine" x1="0" y1="${mt}" x2="0" y2="${H-mb}" stroke="#142429" stroke-width="1" opacity="0" stroke-dasharray="2 2"/>`;
+
+    svg.innerHTML = grid + bars + pm + yL + xL +
+      `<path d="${areaPath}" fill="#142429" opacity=".06"/>` +
+      `<path d="${linePath}" fill="none" stroke="#142429" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>` + dots + hoverLine + hitZones;
+
+    svg.querySelectorAll('.hit-zone').forEach(zone=>{
+      zone.addEventListener('mouseenter', showTooltip);
+      zone.addEventListener('mousemove', moveTooltip);
+      zone.addEventListener('mouseleave', hideTooltip);
+    });
+  }
+
+  function showTooltip(e){
+    const i = parseInt(e.target.dataset.i, 10);
+    const y = chartData[i];
+    const tt = $('tooltip');
+    const hl = $('hoverLine');
+    hl.setAttribute('x1', chartXs[i]);
+    hl.setAttribute('x2', chartXs[i]);
+    hl.setAttribute('opacity','0.3');
+
+    const fc = v => v<0 ? 'tt-neg' : 'tt-pos';
+    tt.innerHTML = `
+      <div class="tt-year">Année ${i+1} · ${START_YEAR+i}</div>
+      <div class="tt-row"><span class="tt-label">Revenus nets</span><span class="tt-val">${fmt(Math.round(y.revNet))} CHF</span></div>
+      <div class="tt-row"><span class="tt-label">Coûts</span><span class="tt-val">${fmt(Math.round(y.cost))} CHF</span></div>
+      <div class="tt-row"><span class="tt-label">Flux net</span><span class="tt-val ${fc(y.flow)}">${fmt(Math.round(y.flow))} CHF</span></div>
+      <div class="tt-row"><span class="tt-label">Cumulé</span><span class="tt-val ${fc(y.cum)}">${fmt(Math.round(y.cum))} CHF</span></div>
+    `;
+    tt.style.opacity = '1';
+  }
+
+  function moveTooltip(e){
+    const tt = $('tooltip');
+    const wrap = tt.parentElement;
+    const rect = wrap.getBoundingClientRect();
+    let x = e.clientX - rect.left + 14;
+    let yPos = e.clientY - rect.top - 10;
+    const ttRect = tt.getBoundingClientRect();
+    if(x + ttRect.width > rect.width - 10) x = e.clientX - rect.left - ttRect.width - 14;
+    if(yPos < 0) yPos = 0;
+    tt.style.left = x + 'px';
+    tt.style.top = yPos + 'px';
+  }
+
+  function hideTooltip(){
+    $('tooltip').style.opacity = '0';
+    $('hoverLine').setAttribute('opacity','0');
+  }
+
+  function renderTable(p,m){
+    const tbl=$('yearTable');
+    let h='<thead><tr><th scope="col"><span class="sr-only">Indicateur</span></th>';
+    for(let i=0;i<HORIZON;i++) h+=`<th scope="col">A${i+1}<div style="font-weight:var(--wc-w-medium);color:var(--wc-fg-3);font-size:10px;margin-top:2px">${START_YEAR+i}</div></th>`;
+    h+='<th scope="col">Total</th></tr></thead>';
+
+    const sum=fn=>m.years.reduce((a,y)=>a+fn(y),0);
+
+    const row=(label,fn,opts={})=>{
+      let r=`<tr><th scope="row">${label}</th>`;
+      m.years.forEach(y=>{
+        const v=fn(y); let c='';
+        if(opts.signed) c=v<0?'neg':v>0?'pos':'';
+        r+=`<td class="${c}">${fmt(v)}</td>`;
+      });
+      const t=sum(fn), tc=opts.signed?(t<0?'neg':t>0?'pos':''):'';
+      r+=`<td class="${tc}"><strong>${fmt(t)}</strong></td></tr>`;
+      return r;
+    };
+
+    const rowNoTotal=(label,fn)=>{
+      let r=`<tr><th scope="row">${label}</th>`;
+      m.years.forEach(y=>{ r+=`<td>${fmt(fn(y),{d:0})}</td>`; });
+      r+='<td></td></tr>';
+      return r;
+    };
+
+    let status='<tr style="font-size:10.5px"><th scope="row">Statut</th>';
+    m.years.forEach(y=>{
+      if(y.isBE) status+='<td style="color:var(--wc-success);font-weight:var(--wc-w-bold)">Breakeven</td>';
+      else if(y.post) status+='<td style="color:var(--wc-brand-orange);font-weight:var(--wc-w-semibold)">Partage</td>';
+      else status+='<td style="color:var(--wc-fg-3)">Frais fixes</td>';
+    });
+    status+='<td></td></tr>';
+
+    let cumR='<tr class="sep-row"><th scope="row"><strong>Flux cumulé</strong></th>';
+    m.years.forEach(y=>{cumR+=`<td class="${y.cum<0?'neg':'pos'}"><strong>${fmt(Math.round(y.cum))}</strong></td>`;});
+    cumR+='<td></td></tr>';
+
+    const lastNPV = m.years[HORIZON-1].cumNPV;
+    let vanR='<tr><th scope="row"><strong>VAN cumulée</strong></th>';
+    m.years.forEach(y=>{vanR+=`<td class="${y.cumNPV<0?'neg':'pos'}">${fmt(Math.round(y.cumNPV))}</td>`;});
+    vanR+=`<td class="${lastNPV<0?'neg':'pos'}"><strong>${fmt(Math.round(lastNPV))}</strong></td></tr>`;
+
+    tbl.innerHTML = h+'<tbody>'+
+      status+
+      rowNoTotal('Exploitation (%)', y=>y.rot*100)+
+      row('Revenu brut', y=>Math.round(y.revGross))+
+      row('Part WECHIP', y=>Math.round(y.share))+
+      row('Revenu net client', y=>Math.round(y.revNet))+
+      `<tr class="spacer"><td colspan="${HORIZON+2}"></td></tr>`+
+      row('Coûts totaux', y=>Math.round(y.cost))+
+      row('Flux net annuel', y=>Math.round(y.flow), {signed:true})+
+      cumR+vanR+
+      '</tbody>';
+  }
+
+  function renderCostBreakdown(p, m){
+    const beY    = m.beNominal > 0 ? m.beNominal : HORIZON + 1;
+    const isPost6 = REPL_YEAR > beY;
+    const cfg     = MODELS[currentModel] || MODELS.filaire;
+    const extra   = Math.max(0, p.modules - 2);
+
+    let h = '';
+    h += `<div class="section-label">Investissement — Année 1 uniquement</div>`;
+    h += `<div class="row"><span>Machine nette (après rabais)</span><span class="val">${fmt(Math.round(p.machineNet))} CHF</span></div>`;
+    h += `<div class="row"><span>Installation &amp; livraison</span><span class="val">${fmt(Math.round(p.installNet))} CHF</span></div>`;
+    h += `<div class="row" style="border-top:1px solid var(--wc-border-subtle);margin-top:4px;padding-top:6px">
+            <span style="font-weight:var(--wc-w-bold)">= Investissement total</span>
+            <span class="val" style="font-weight:var(--wc-w-bold)">${fmt(Math.round(p.investTotal))} CHF</span>
+          </div>`;
+
+    h += `<div class="section-label">OPEX — maintenance annuelle (avant breakeven)</div>`;
+    if (extra > 0) {
+      h += `<div class="row"><span>Base (${cfg.label} — 2 col.)</span><span class="val">${fmt(cfg.base.opex)} CHF</span></div>`;
+      h += `<div class="row"><span>+${extra} module${extra>1?'s':''} supplémentaire${extra>1?'s':''} × ${fmt(cfg.perModule.opex)} CHF</span><span class="val">${fmt(extra * cfg.perModule.opex)} CHF</span></div>`;
+      h += `<div class="row" style="border-top:1px solid var(--wc-border-subtle);margin-top:4px;padding-top:6px">
+              <span style="font-weight:var(--wc-w-bold)">= OPEX / an</span>
+              <span class="val" style="font-weight:var(--wc-w-bold)">${fmt(p.opex)} CHF/an</span>
+            </div>`;
+    } else {
+      h += `<div class="row"><span>Maintenance &amp; exploitation</span><span class="val">${fmt(p.opex)} CHF/an</span></div>`;
+    }
+
+    h += `<div class="section-label">Remplacement électronique — Année ${REPL_YEAR}</div>`;
+    if (isPost6) {
+      h += `<div class="row"><span>OPEX</span><span class="val" style="color:var(--wc-success)">0 CHF (couvert par WECHIP)</span></div>`;
+      h += `<div class="row"><span>Remplacement électronique</span><span class="val" style="color:var(--wc-success)">0 CHF (couvert par WECHIP)</span></div>`;
+      h += `<div class="row" style="border-top:1px solid var(--wc-border-subtle);margin-top:4px;padding-top:6px">
+              <span style="font-weight:var(--wc-w-bold)">= Total Année ${REPL_YEAR}</span>
+              <span class="val" style="font-weight:var(--wc-w-bold);color:var(--wc-success)">0 CHF</span>
+            </div>`;
+      h += `<div class="note">Le remplacement électronique est à la charge de WECHIP dès lors que le partage des revenus est actif.</div>`;
+    } else {
+      h += `<div class="row"><span>OPEX annuel</span><span class="val">${fmt(p.opex)} CHF</span></div>`;
+      h += `<div class="row"><span>+ Remplacement électronique</span><span class="val">${fmt(p.replCost)} CHF</span></div>`;
+      h += `<div class="row" style="border-top:1px solid var(--wc-border-subtle);margin-top:4px;padding-top:6px">
+              <span style="font-weight:var(--wc-w-bold)">= Total Année ${REPL_YEAR}</span>
+              <span class="val" style="font-weight:var(--wc-w-bold)">${fmt(p.opex + p.replCost)} CHF</span>
+            </div>`;
+    }
+
+    if (beY < HORIZON) {
+      const postStart = beY + 1;
+      h += `<div class="section-label">Années ${postStart}–${HORIZON} — Post-breakeven</div>`;
+      h += `<div class="row"><span>Coûts totaux (OPEX + remplacement)</span><span class="val" style="color:var(--wc-success)">0 CHF / an</span></div>`;
+      h += `<div class="note">Dès que le partage 50/50 est actif, WECHIP couvre la maintenance et le remplacement électronique.</div>`;
+    } else if (beY === HORIZON) {
+      h += `<div class="note" style="margin-top:10px">Breakeven atteint à l'Année ${HORIZON} — aucune période post-breakeven dans cet horizon.</div>`;
+    } else {
+      h += `<div class="note" style="margin-top:10px">Le breakeven n'est pas atteint dans l'horizon de ${HORIZON} ans — l'OPEX s'applique sur toutes les années.</div>`;
+    }
+
+    $('costBreakdown').innerHTML = h;
+  }
+
+  function render(){
+    const p=read(); renderInputs(p);
+    const m=compute(p); renderKPIs(p,m); renderChart(p,m); renderTable(p,m); renderCostBreakdown(p,m);
+  }
+
+  document.querySelectorAll('input').forEach(el=>{
+    el.addEventListener('input',render);
+    el.addEventListener('change',render);
+  });
+
+  const DEFAULTS = { modulesInput: 3, revPerColDay: 6, discountPct: 30, model: 'filaire', scenario: 'growth' };
+
+  $('btnReset').addEventListener('click', () => {
+    $('modulesInput').value = DEFAULTS.modulesInput;
+    $('revPerColDay').value = DEFAULTS.revPerColDay;
+    $('discountPct').value  = DEFAULTS.discountPct;
+    setModel(DEFAULTS.model);
+    setScenario(DEFAULTS.scenario);
+    if (window.location.search) {
+      history.replaceState(null, '', window.location.pathname);
+    }
+  });
+  $('btnPrint').addEventListener('click',()=>window.print());
+
+  $('btnShare').addEventListener('click', async () => {
+    const params = new URLSearchParams({
+      mod: $('modulesInput').value,
+      rev: $('revPerColDay').value,
+      rabais: $('discountPct').value,
+      scenario: currentScenario,
+      modele: currentModel
+    });
+    const url = window.location.origin + window.location.pathname + '?' + params.toString();
+    const btn = $('btnShare');
+    const originalLabel = btn.getAttribute('aria-label');
+    const showCopied = () => {
+      btn.textContent = 'Lien copié ✓';
+      btn.style.borderColor = 'var(--wc-success)';
+      btn.style.color = 'var(--wc-success)';
+      btn.setAttribute('aria-label', 'Lien copié dans le presse-papiers');
+      setTimeout(() => {
+        btn.textContent = 'Partager';
+        btn.style.borderColor = '';
+        btn.style.color = '';
+        if (originalLabel) btn.setAttribute('aria-label', originalLabel);
+      }, 2500);
+    };
+    try {
+      await navigator.clipboard.writeText(url);
+      showCopied();
+    } catch {
+      // Clipboard API unavailable (insecure context, denied) — let the user
+      // copy from a temporary readonly input rather than an intrusive prompt().
+      const tmp = document.createElement('input');
+      tmp.value = url;
+      tmp.setAttribute('readonly', '');
+      tmp.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+      document.body.appendChild(tmp);
+      tmp.select();
+      try { document.execCommand('copy'); showCopied(); }
+      catch { window.prompt('Copiez ce lien pour le partager :', url); }
+      document.body.removeChild(tmp);
+    }
+  });
+
+  // Single helper for both collapse panels — native <button> already gives
+  // us Enter/Space activation, so we only handle the open/close visuals.
+  function attachToggle(toggleId, bodyId){
+    const toggle = $(toggleId), body = $(bodyId);
+    const arrow  = toggle.querySelector('.arrow');
+    toggle.addEventListener('click', () => {
+      const isOpen = body.classList.toggle('open');
+      arrow.textContent = isOpen ? '▼' : '▶';
+      toggle.setAttribute('aria-expanded', String(isOpen));
+    });
+  }
+  attachToggle('hypoToggle', 'hypoBody');
+  attachToggle('costToggle', 'costBody');
+
+  function renderRotationDetail(){
+    const rot = getRotation();
+    let html = '', start = 1;
+    for (let y = 2; y <= HORIZON + 1; y++) {
+      if (y > HORIZON || rot[y] !== rot[start]) {
+        const range = (start === y - 1) ? `Année ${start}` : `Années ${start}–${y - 1}`;
+        const pct   = (rot[start] * 100).toFixed(0) + ' %';
+        html += `<div class="row"><span>${range}</span><span class="val">${pct}</span></div>`;
+        start = y;
+      }
+    }
+    $('rotationDetail').innerHTML = html;
+  }
+
+  // The setters take an optional {silent:true} so URL hydration can update
+  // multiple pieces of state and still trigger only one render() at the end.
+  function setScenario(s, opts={}){
+    currentScenario = s;
+    const isGrowth = (s === 'growth');
+    $('btnGrowth').classList.toggle('active', isGrowth);
+    $('btnSteady').classList.toggle('active', !isGrowth);
+    $('btnGrowth').setAttribute('aria-pressed', String(isGrowth));
+    $('btnSteady').setAttribute('aria-pressed', String(!isGrowth));
+    $('scenarioDesc').textContent = isGrowth
+      ? 'Montée progressive du taux de rotation sur 5 ans'
+      : 'Taux de rotation fixe à 85 % dès la première année';
+    renderRotationDetail();
+    if (!opts.silent) render();
+  }
+  $('btnGrowth').addEventListener('click',()=>setScenario('growth'));
+  $('btnSteady').addEventListener('click',()=>setScenario('steady'));
+
+  function setModel(m, opts={}){
+    currentModel = m;
+    const isFilaire = (m === 'filaire');
+    $('btnFilaire').classList.toggle('active', isFilaire);
+    $('btnSolaire').classList.toggle('active', !isFilaire);
+    $('btnFilaire').setAttribute('aria-pressed', String(isFilaire));
+    $('btnSolaire').setAttribute('aria-pressed', String(!isFilaire));
+    if (!opts.silent) render();
+  }
+  $('btnFilaire').addEventListener('click',()=>setModel('filaire'));
+  $('btnSolaire').addEventListener('click',()=>setModel('solaire'));
+
+  (function loadFromURL(){
+    const params = new URLSearchParams(window.location.search);
+    if(!params.toString()) return;
+    if(params.has('mod')) $('modulesInput').value = params.get('mod');
+    else if(params.has('cols')) {
+      const c = parseInt(params.get('cols'),10);
+      if(!Number.isNaN(c)) $('modulesInput').value = Math.max(1, Math.round(c/2));
+    }
+    if(params.has('rev')) $('revPerColDay').value = params.get('rev');
+    if(params.has('rabais')) $('discountPct').value = params.get('rabais');
+    const modele = params.get('modele');
+    if (modele === 'filaire' || modele === 'solaire') setModel(modele, {silent:true});
+    const scenario = params.get('scenario');
+    if (scenario === 'steady' || scenario === 'growth') setScenario(scenario, {silent:true});
+  })();
+
+  renderRotationDetail();
+  render();
+})();
+</script>
+</body>
+</html>
