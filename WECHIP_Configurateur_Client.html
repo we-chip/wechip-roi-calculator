@@ -671,36 +671,40 @@
           </div>
         </div>
         <div class="field">
+          <label>Colonnes <span class="help">calculé automatiquement</span></label>
+          <div class="input" style="background:var(--wc-ink-75);border-color:var(--wc-border-subtle)">
+            <input type="text" id="colsReadout" value="6" readonly tabindex="-1"
+              style="cursor:default;color:var(--wc-fg-2);background:transparent">
+            <span class="unit">col.</span>
+          </div>
+        </div>
+        <div class="field">
           <label>Revenu par colonne / jour</label>
           <div class="input">
             <input type="number" id="revPerColDay" min="1" max="30" step="0.5" value="6" inputmode="decimal" autocomplete="off">
             <span class="unit">CHF</span>
           </div>
         </div>
-        <div class="readout"><span class="lbl">Soit en colonnes</span><span class="val"><span id="colsReadout">6</span><span class="u">col.</span></span></div>
       </div>
 
       <div class="panel">
         <div class="panel-head">Investissement <span style="font-weight:var(--wc-w-medium);letter-spacing:0;text-transform:none;font-size:11px;color:var(--wc-fg-3)">HT</span></div>
-        <div class="readout"><span class="lbl">Prix machine brut</span><span class="val"><span id="priceBrut">—</span><span class="u">CHF</span></span></div>
-        <div class="field-compact">
+        <div class="readout"><span class="lbl">Prix machine</span><span class="val"><span id="priceBrut">—</span><span class="u">CHF</span></span></div>
+        <div class="readout"><span class="lbl">Installation &amp; livraison</span><span class="val"><span id="installCost">—</span><span class="u">CHF</span></span></div>
+        <div class="readout"><span class="lbl">OPEX — frais d'exploitation an 1</span><span class="val"><span id="opexYear1">—</span><span class="u">CHF</span></span></div>
+        <div class="field-compact" style="border-top:1px solid var(--wc-border-subtle);margin-top:8px;padding-top:10px">
           <label for="discountPct">Rabais commercial</label>
-          <div class="input">
+          <div class="input" style="width:110px;height:38px">
             <input type="number" id="discountPct" min="0" max="80" step="5" value="30" inputmode="numeric" autocomplete="off">
             <span class="unit">%</span>
           </div>
         </div>
-        <div class="readout"><span class="lbl">Prix machine NET</span><span class="val"><span id="priceNet">—</span><span class="u">CHF</span></span></div>
-        <div class="readout"><span class="lbl">Installation &amp; livraison</span><span class="val"><span id="installCost">—</span><span class="u">CHF</span></span></div>
         <div class="readout total"><span class="lbl">Investissement total</span><span class="val"><span id="investTotal">—</span><span class="u">CHF</span></span></div>
       </div>
 
       <div class="panel">
-        <button type="button" class="collapse-toggle" id="hypoToggle" aria-expanded="false" aria-controls="hypoBody">
-          <span class="panel-head" style="margin:0">Hypothèses d'exploitation</span>
-          <span class="arrow" aria-hidden="true">▶</span>
-        </button>
-        <div class="collapse-body" id="hypoBody">
+          <div class="panel-head">Hypothèses d'exploitation</div>
+        <div id="hypoBody">
           <div style="margin-top:16px">
             <div class="scenario-switch" role="group" aria-label="Choix du scénario d'exploitation">
               <button class="scenario-btn active" data-scenario="growth" id="btnGrowth" type="button" aria-pressed="true">
@@ -724,7 +728,7 @@
             <div class="row"><span>Jours d'exploitation</span><span class="val">303 j/an</span></div>
             <div class="row"><span>Taux d'actualisation</span><span class="val">5 %</span></div>
             <div class="row"><span>Remplacement électronique</span><span class="val">Année 6</span></div>
-            <div class="section-label">Modèle post-breakeven</div>
+            <div class="section-label">Partage des revenus</div>
             <div class="row"><span>Avant breakeven</span><span class="val">100 % client</span></div>
             <div class="row"><span>Après breakeven</span><span class="val">50 / 50</span></div>
             <div class="note">Maintenance <em>et</em> remplacement électronique couverts par WECHIP dès que le partage est actif</div>
@@ -743,7 +747,7 @@
         <span><i style="background:var(--wc-ink-1000)"></i> Flux cumulé</span>
         <span><i style="background:var(--wc-brand-orange)"></i> Revenus</span>
         <span><i style="background:var(--wc-brand-turquoise)"></i> Coûts</span>
-        <span><i class="dash" aria-hidden="true"></i> ROI</span>
+        <span><i class="dash" aria-hidden="true"></i> Breakeven</span>
       </div>
     </div>
     <svg class="chart" id="chart" viewBox="0 0 800 280" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Projection 10 ans des revenus, coûts et flux cumulé"></svg>
@@ -768,7 +772,7 @@
 
   <footer class="app-foot">
     Confidentiel WECHIP · Tous les montants sont exprimés HT · Modèle indicatif.
-    <a href="mailto:contact@wechip.ch">contact@wechip.ch</a>
+    <a href="mailto:hello@wechip.ch">hello@wechip.ch</a>
   </footer>
 </div>
 
@@ -784,7 +788,7 @@
   const HORIZON      = 10;
   const START_YEAR   = new Date().getFullYear();
 
-  const ROT_GROWTH = [0, 0.10, 0.25, 0.60, 0.70, 0.80, 0.85, 0.85, 0.85, 0.85, 0.85];
+  const ROT_GROWTH = [0, 0.10, 0.25, 0.65, 0.75, 0.80, 0.85, 0.85, 0.85, 0.85, 0.85];
   const ROT_STEADY = [0, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85];
 
   const MODELS = {
@@ -897,10 +901,10 @@
   }
 
   function renderInputs(p){
-    $('colsReadout').textContent = p.cols;
+    $('colsReadout').value = p.cols;
     $('priceBrut').textContent = fmt(p.priceBrut);
-    $('priceNet').textContent = fmt(p.machineNet);
     $('installCost').textContent = fmt(p.installNet);
+    $('opexYear1').textContent = fmt(p.opex);
     $('investTotal').textContent = fmt(p.investTotal);
   }
 
@@ -1001,7 +1005,7 @@
     if(m.beNominal>0 && m.beNominal<=HORIZON){
       const px=xs[m.beNominal-1];
       pm=`<line x1="${px}" y1="${mt}" x2="${px}" y2="${H-mb}" stroke="#FF7100" stroke-dasharray="4 3" stroke-width="1.5"/>
-        <text x="${px}" y="${mt-4}" text-anchor="middle" fill="#FF7100" font-size="10.5" font-weight="700">ROI</text>`;
+        <text x="${px}" y="${mt-4}" text-anchor="middle" fill="#FF7100" font-size="10.5" font-weight="700">Breakeven</text>`;
     }
 
     const lastIdx = HORIZON - 1;
@@ -1255,7 +1259,6 @@
       toggle.setAttribute('aria-expanded', String(isOpen));
     });
   }
-  attachToggle('hypoToggle', 'hypoBody');
   attachToggle('costToggle', 'costBody');
 
   function renderRotationDetail(){
