@@ -555,8 +555,10 @@
   table.years td.neg{color:var(--wc-error);font-weight:var(--wc-w-semibold)}
   table.years td.pos{color:var(--wc-success);font-weight:var(--wc-w-semibold)}
   table.years tr.sep-row td{border-bottom:2px solid var(--wc-ink-200)}
-  table.years tr.spacer td{height:6px;padding:0;border:none}
+  table.years tr.spacer td{height:6px;padding:0;border-bottom:none;background:none}
   table.years tbody tr:hover td{background:var(--wc-ink-75)}
+  table.years thead th:last-child,
+  table.years tbody td:last-child{border-left:2px solid var(--wc-ink-200);padding-left:10px}
 
   /* ── FOOTER ─────────────────────────────────────────────── */
   footer.app-foot{
@@ -665,9 +667,9 @@
         </div>
         <hr class="sep">
         <div class="field">
-          <label>Modules <span class="help">1 à 8 · 1 module = 2 colonnes</span></label>
+          <label>Modules <span class="help">2 à 8 · 1 module = 2 colonnes</span></label>
           <div class="input">
-            <input type="number" id="modulesInput" min="1" max="8" step="1" value="3" inputmode="numeric" autocomplete="off">
+            <input type="number" id="modulesInput" min="2" max="8" step="1" value="2" inputmode="numeric" autocomplete="off">
             <span class="unit">mod.</span>
           </div>
         </div>
@@ -694,10 +696,11 @@
         <div class="field">
           <label for="discountPct">Rabais commercial</label>
           <div class="input">
-            <input type="number" id="discountPct" min="0" max="80" step="5" value="30" inputmode="numeric" autocomplete="off">
+            <input type="number" id="discountPct" min="0" max="80" step="5" value="0" inputmode="numeric" autocomplete="off">
             <span class="unit">%</span>
           </div>
         </div>
+        <div class="readout"><span class="lbl">Rabais</span><span class="val" style="color:var(--wc-success)"><span id="rabaisAmount">—</span><span class="u">CHF</span></span></div>
         <div class="readout total"><span class="lbl">Investissement total</span><span class="val"><span id="investTotal">—</span><span class="u">CHF</span></span></div>
       </div>
 
@@ -717,7 +720,7 @@
                 <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M4 18 C 8 18, 8 6, 12 6 C 16 6, 16 18, 20 18" />
                 </svg>
-                Maturité
+                Exploitation
               </button>
             </div>
             <div class="scenario-desc" id="scenarioDesc">Montée progressive du taux de rotation sur 5 ans</div>
@@ -744,8 +747,8 @@
       <div class="panel-head">Projection 10 ans</div>
       <div class="chart-legend" aria-label="Légende du graphique">
         <span><i style="background:var(--wc-ink-1000)"></i> Flux cumulé</span>
-        <span><i style="background:var(--wc-brand-orange)"></i> Revenus</span>
-        <span><i style="background:var(--wc-brand-turquoise)"></i> Coûts</span>
+        <span><i style="background:var(--wc-success)"></i> Revenus</span>
+        <span><i style="background:var(--wc-error)"></i> Coûts</span>
         <span><i class="dash" aria-hidden="true"></i> Breakeven</span>
       </div>
     </div>
@@ -835,7 +838,8 @@
     const d = o.d || 0;
     // Normalize -0 → 0 so Intl doesn't render "-0 CHF" for tiny rounded values.
     const v = (d === 0 && n > -0.5 && n < 0.5) ? 0 : n;
-    const s = numFmt(d).format(v);
+    // Swiss CHF standard: apostrophe as thousands separator (replaces narrow no-break space from Intl)
+    const s = numFmt(d).format(v).replace(/[\u00A0\u202F\s]/g, "'");
     return o.unit ? s + ' ' + o.unit : s;
   };
   const pct = (n, d=1) => (n*100).toFixed(d).replace('.', ',') + ' %';
@@ -851,23 +855,25 @@
   }
 
   function read(){
-    const modules      = clampInput('modulesInput', 1, 8, 3, 1);
+    const modules      = clampInput('modulesInput', 2, 8, 2, 1);
     const cols         = modules * 2;
     const revPerColDay = clampInput('revPerColDay', 0.5, 30, 6);
-    const dPct         = clampInput('discountPct',  0, 80, 30) / 100;
+    const dPct         = clampInput('discountPct',  0, 80, 0) / 100;
 
     const pr        = pricingFromModules(modules);
-    const brutTotal = pr.brut + pr.install;
+    const brutTotal = pr.brut + pr.install + pr.opex;
     const netTotal  = Math.max(0, brutTotal * (1 - dPct));
-    const ratio      = pr.brut / brutTotal;
-    const machineNet = Math.round(netTotal * ratio);
-    const installNet = Math.round(netTotal - machineNet);
+    const rMachine  = pr.brut / brutTotal;
+    const rInstall  = pr.install / brutTotal;
+    const machineNet = Math.round(netTotal * rMachine);
+    const installNet = Math.round(netTotal * rInstall);
+    const opexNet    = Math.round(netTotal - machineNet - installNet);
 
     return {
       cols, revPerColDay, modules,
-      priceBrut: pr.brut,
-      machineNet, installNet, investTotal: netTotal,
-      opex: pr.opex, replCost: pr.replCost
+      priceBrut: pr.brut, installBrut: pr.install,
+      machineNet, installNet, opexNet, investTotal: netTotal,
+      opex: pr.opex, opexBrut: pr.opex, replCost: pr.replCost
     };
   }
 
@@ -876,7 +882,8 @@
     let hCum = 0, beNominal = -1;
     for (let y = 1; y <= HORIZON; y++) {
       const rev  = p.cols * p.revPerColDay * rot[y] * DAYS;
-      const cost = (y === 1 ? p.investTotal : 0) + p.opex + (y === REPL_YEAR ? p.replCost : 0);
+      // Year 1 OPEX is included in investTotal (discounted), so skip it
+      const cost = (y === 1 ? p.investTotal : 0) + (y === 1 ? 0 : p.opex) + (y === REPL_YEAR ? p.replCost : 0);
       hCum += rev - cost;
       if (hCum >= 0 && beNominal < 0) beNominal = y;
     }
@@ -887,14 +894,15 @@
       const post     = beNominal > 0 && y > beNominal;
       const share    = post ? revGross * WECHIP_SHARE : 0;
       const revNet   = revGross - share;
-      const cost     = (y === 1 ? p.investTotal : 0)
-                     + (post ? 0 : p.opex)
-                     + (y === REPL_YEAR && !post ? p.replCost : 0);
+      const capex    = y === 1 ? p.investTotal : 0;
+      // Year 1 OPEX already in capex (investTotal); subsequent years charge opex normally
+      const opex     = (y === 1 ? 0 : (post ? 0 : p.opex)) + (y === REPL_YEAR && !post ? p.replCost : 0);
+      const cost     = capex + opex;
       const flow = revNet - cost;
       cum    += flow;
       cumNPV += flow / Math.pow(1 + NPV_RATE, y);
       if (cumNPV >= 0 && beActualise < 0) beActualise = y;
-      years.push({ y, rot: rot[y], revGross, share, revNet, cost, flow, cum, cumNPV, post, isBE: y === beNominal });
+      years.push({ y, rot: rot[y], revGross, share, revNet, capex, opex, cost, flow, cum, cumNPV, post, isBE: y === beNominal });
     }
     return { years, beNominal, beActualise };
   }
@@ -902,8 +910,10 @@
   function renderInputs(p){
     $('colsReadout').textContent = p.cols;
     $('priceBrut').textContent = fmt(p.priceBrut);
-    $('installCost').textContent = fmt(p.installNet);
-    $('opexYear1').textContent = fmt(p.opex);
+    $('installCost').textContent = fmt(p.installBrut);
+    $('opexYear1').textContent = fmt(p.opexBrut);
+    const rabais = Math.round(p.priceBrut + p.installBrut + p.opexBrut - p.investTotal);
+    $('rabaisAmount').textContent = rabais > 0 ? '−' + fmt(rabais) : '0';
     $('investTotal').textContent = fmt(p.investTotal);
   }
 
@@ -964,7 +974,9 @@
     const cums=m.years.map(y=>y.cum), revs=m.years.map(y=>y.revNet), costs=m.years.map(y=>y.cost);
     const all=[...cums,...revs,...costs,0];
     const yMin=Math.min(...all), yMax=Math.max(...all), pad=(yMax-yMin)*.10||1;
-    const lo=yMin-pad, hi=yMax+pad;
+    // Symmetric axis so 0 is always centered and gets a tick label
+    const absMax = Math.max(Math.abs(yMin-pad), Math.abs(yMax+pad));
+    const lo = -absMax, hi = absMax;
     const yPx=v=>mt+iH-(v-lo)/(hi-lo)*iH;
 
     const bW=colW*.30;
@@ -972,9 +984,9 @@
     for(let i=0;i<HORIZON;i++){
       const cx=xs[i], y0=yPx(0);
       const rt=yPx(revs[i]);
-      bars+=`<rect class="bar" data-i="${i}" x="${(cx-bW-1).toFixed(1)}" y="${Math.min(rt,y0).toFixed(1)}" width="${bW.toFixed(1)}" height="${Math.abs(rt-y0).toFixed(1)}" fill="#FF7100" opacity=".88" rx="3"/>`;
+      bars+=`<rect class="bar" data-i="${i}" x="${(cx-bW-1).toFixed(1)}" y="${Math.min(rt,y0).toFixed(1)}" width="${bW.toFixed(1)}" height="${Math.abs(rt-y0).toFixed(1)}" fill="var(--wc-success)" opacity=".88" rx="3"/>`;
       const ct=yPx(-costs[i]);
-      bars+=`<rect class="bar" data-i="${i}" x="${(cx+1).toFixed(1)}" y="${Math.min(ct,y0).toFixed(1)}" width="${bW.toFixed(1)}" height="${Math.abs(ct-y0).toFixed(1)}" fill="#8ECFD3" opacity=".85" rx="3"/>`;
+      bars+=`<rect class="bar" data-i="${i}" x="${(cx+1).toFixed(1)}" y="${Math.min(ct,y0).toFixed(1)}" width="${bW.toFixed(1)}" height="${Math.abs(ct-y0).toFixed(1)}" fill="var(--wc-error)" opacity=".85" rx="3"/>`;
     }
 
     let hitZones='';
@@ -985,13 +997,13 @@
     // Adaptive Y-axis precision: when the range is small (e.g. tiny machines
     // or all-loss configs), kCHF rounded to integers collapses every tick
     // label to "0". Pick decimals so neighboring ticks stay distinguishable.
-    const tickStep = (hi - lo) / 5 / 1000;
+    const tickStep = (hi - lo) / 4 / 1000;
     const yDecimals = tickStep >= 5 ? 0 : tickStep >= 0.5 ? 1 : 2;
     let grid='',yL='';
-    for(let i=0;i<=5;i++){
-      const v=lo+(hi-lo)*i/5, yp=yPx(v);
+    for(let i=0;i<=4;i++){
+      const v=lo+(hi-lo)*i/4, yp=yPx(v);
       grid+=`<line x1="${ml}" y1="${yp}" x2="${W-mr}" y2="${yp}" stroke="#E9F0F0"/>`;
-      yL+=`<text x="${ml-10}" y="${yp+4}" text-anchor="end" fill="#74787A" font-size="10" font-weight="500">${(v/1000).toFixed(yDecimals)}</text>`;
+      yL+=`<text x="${ml-10}" y="${yp+4}" text-anchor="end" fill="#74787A" font-size="10" font-weight="500">${(v/1000).toFixed(yDecimals).replace('.',',')}</text>`;
     }
     // Y-axis title (currency unit)
     yL+=`<text x="${ml-10}" y="${mt-6}" text-anchor="end" fill="#142429" font-size="10" font-weight="700" letter-spacing=".4">kCHF</text>`;
@@ -1075,13 +1087,15 @@
     const sum=fn=>m.years.reduce((a,y)=>a+fn(y),0);
 
     const row=(label,fn,opts={})=>{
-      let r=`<tr><th scope="row">${label}</th>`;
+      const isSub = opts.subtotal;
+      let r=`<tr${isSub?' class="sep-row"':''}><th scope="row">${isSub?'<strong>'+label+'</strong>':label}</th>`;
       m.years.forEach(y=>{
         const v=fn(y); let c='';
-        if(opts.signed) c=v<0?'neg':v>0?'pos':'';
-        r+=`<td class="${c}">${fmt(v)}</td>`;
+        if(opts.alwaysNeg) c=v!==0?'neg':'';
+        else if(opts.signed) c=v<0?'neg':v>0?'pos':'';
+        r+=`<td class="${c}">${isSub?'<strong>'+fmt(v)+'</strong>':fmt(v)}</td>`;
       });
-      const t=sum(fn), tc=opts.signed?(t<0?'neg':t>0?'pos':''):'';
+      const t=sum(fn), tc=opts.alwaysNeg?(t!==0?'neg':''):(opts.signed?(t<0?'neg':t>0?'pos':''):'');
       r+=`<td class="${tc}"><strong>${fmt(t)}</strong></td></tr>`;
       return r;
     };
@@ -1093,7 +1107,7 @@
       return r;
     };
 
-    let status='<tr style="font-size:10.5px"><th scope="row">Statut</th>';
+    let status='<tr style="font-size:10.5px"><th scope="row">Modèle</th>';
     m.years.forEach(y=>{
       if(y.isBE) status+='<td style="color:var(--wc-success);font-weight:var(--wc-w-bold)">Breakeven</td>';
       else if(y.post) status+='<td style="color:var(--wc-brand-orange);font-weight:var(--wc-w-semibold)">Partage</td>';
@@ -1102,24 +1116,29 @@
     status+='<td></td></tr>';
 
     let cumR='<tr class="sep-row"><th scope="row"><strong>Flux cumulé</strong></th>';
-    m.years.forEach(y=>{cumR+=`<td class="${y.cum<0?'neg':'pos'}"><strong>${fmt(Math.round(y.cum))}</strong></td>`;});
+    m.years.forEach(y=>{cumR+=`<td class="${y.cum<0?'neg':y.cum>0?'pos':''}"><strong>${fmt(Math.round(y.cum))}</strong></td>`;});
     cumR+='<td></td></tr>';
 
     const lastNPV = m.years[HORIZON-1].cumNPV;
     let vanR='<tr><th scope="row"><strong>VAN cumulée</strong></th>';
-    m.years.forEach(y=>{vanR+=`<td class="${y.cumNPV<0?'neg':'pos'}">${fmt(Math.round(y.cumNPV))}</td>`;});
-    vanR+=`<td class="${lastNPV<0?'neg':'pos'}"><strong>${fmt(Math.round(lastNPV))}</strong></td></tr>`;
+    m.years.forEach(y=>{vanR+=`<td class="${y.cumNPV<0?'neg':y.cumNPV>0?'pos':''}">${fmt(Math.round(y.cumNPV))}</td>`;});
+    vanR+=`<td class="${lastNPV<0?'neg':lastNPV>0?'pos':''}"><strong>${fmt(Math.round(lastNPV))}</strong></td></tr>`;
+
+    const spacer = `<tr class="spacer">${'<td></td>'.repeat(HORIZON+2)}</tr>`;
 
     tbl.innerHTML = h+'<tbody>'+
-      status+
       rowNoTotal('Exploitation (%)', y=>y.rot*100)+
+      spacer+
       row('Revenu brut', y=>Math.round(y.revGross))+
-      row('Part WECHIP', y=>Math.round(y.share))+
-      row('Revenu net client', y=>Math.round(y.revNet))+
-      `<tr class="spacer"><td colspan="${HORIZON+2}"></td></tr>`+
-      row('Coûts totaux', y=>Math.round(y.cost))+
-      row('Flux net annuel', y=>Math.round(y.flow), {signed:true})+
+      row('Part WECHIP', y=>Math.round(y.share), {alwaysNeg:true})+
+      row('Revenu net client', y=>Math.round(y.revNet), {signed:true, subtotal:true})+
+      spacer+
+      row('Investissement (CAPEX)', y=>Math.round(y.capex), {alwaysNeg:true})+
+      row('Exploitation (OPEX)', y=>Math.round(y.opex), {alwaysNeg:true})+
+      row('Flux net annuel', y=>Math.round(y.flow), {signed:true, subtotal:true})+
+      spacer+
       cumR+vanR+
+      status+
       '</tbody>';
   }
 
@@ -1131,16 +1150,22 @@
 
     let h = '';
     h += `<div class="section-label">Investissement — Année 1 uniquement</div>`;
-    h += `<div class="row"><span>Machine nette (après rabais)</span><span class="val">${fmt(Math.round(p.machineNet))} CHF</span></div>`;
-    h += `<div class="row"><span>Installation &amp; livraison</span><span class="val">${fmt(Math.round(p.installNet))} CHF</span></div>`;
+    h += `<div class="row"><span>Machine</span><span class="val">${fmt(Math.round(p.priceBrut))} CHF</span></div>`;
+    h += `<div class="row"><span>Installation &amp; livraison</span><span class="val">${fmt(Math.round(p.installBrut))} CHF</span></div>`;
+    h += `<div class="row"><span>Exploitation Année 1</span><span class="val">${fmt(Math.round(p.opexBrut))} CHF</span></div>`;
+    const brutSum = p.priceBrut + p.installBrut + p.opexBrut;
+    const rabais = Math.round(brutSum - p.investTotal);
+    if (rabais > 0) {
+      h += `<div class="row"><span>Rabais</span><span class="val" style="color:var(--wc-success)">−${fmt(rabais)} CHF</span></div>`;
+    }
     h += `<div class="row" style="border-top:1px solid var(--wc-border-subtle);margin-top:4px;padding-top:6px">
             <span style="font-weight:var(--wc-w-bold)">= Investissement total</span>
             <span class="val" style="font-weight:var(--wc-w-bold)">${fmt(Math.round(p.investTotal))} CHF</span>
           </div>`;
 
-    h += `<div class="section-label">OPEX — maintenance annuelle (avant breakeven)</div>`;
+    h += `<div class="section-label">OPEX — maintenance annuelle (années 2+, avant breakeven)</div>`;
     if (extra > 0) {
-      h += `<div class="row"><span>Base (${cfg.label} — 2 col.)</span><span class="val">${fmt(cfg.base.opex)} CHF</span></div>`;
+      h += `<div class="row"><span>Base (${cfg.label} — 2 modules)</span><span class="val">${fmt(cfg.base.opex)} CHF</span></div>`;
       h += `<div class="row"><span>+${extra} module${extra>1?'s':''} supplémentaire${extra>1?'s':''} × ${fmt(cfg.perModule.opex)} CHF</span><span class="val">${fmt(extra * cfg.perModule.opex)} CHF</span></div>`;
       h += `<div class="row" style="border-top:1px solid var(--wc-border-subtle);margin-top:4px;padding-top:6px">
               <span style="font-weight:var(--wc-w-bold)">= OPEX / an</span>
@@ -1192,7 +1217,7 @@
     el.addEventListener('change',render);
   });
 
-  const DEFAULTS = { modulesInput: 3, revPerColDay: 6, discountPct: 30, model: 'filaire', scenario: 'growth' };
+  const DEFAULTS = { modulesInput: 2, revPerColDay: 6, discountPct: 0, model: 'filaire', scenario: 'growth' };
 
   $('btnReset').addEventListener('click', () => {
     $('modulesInput').value = DEFAULTS.modulesInput;
@@ -1310,7 +1335,7 @@
     if(params.has('mod')) $('modulesInput').value = params.get('mod');
     else if(params.has('cols')) {
       const c = parseInt(params.get('cols'),10);
-      if(!Number.isNaN(c)) $('modulesInput').value = Math.max(1, Math.round(c/2));
+      if(!Number.isNaN(c)) $('modulesInput').value = Math.max(2, Math.round(c/2));
     }
     if(params.has('rev')) $('revPerColDay').value = params.get('rev');
     if(params.has('rabais')) $('discountPct').value = params.get('rabais');
