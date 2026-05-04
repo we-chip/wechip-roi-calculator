@@ -663,6 +663,7 @@
             </button>
           </div>
         </div>
+        <hr class="sep">
         <div class="field">
           <label>Modules <span class="help">1 à 8 · 1 module = 2 colonnes</span></label>
           <div class="input">
@@ -670,14 +671,11 @@
             <span class="unit">mod.</span>
           </div>
         </div>
-        <div class="field">
-          <label>Colonnes <span class="help">calculé automatiquement</span></label>
-          <div class="input" style="background:var(--wc-ink-75);border-color:var(--wc-border-subtle)">
-            <input type="text" id="colsReadout" value="6" readonly tabindex="-1"
-              style="cursor:default;color:var(--wc-fg-2);background:transparent">
-            <span class="unit">col.</span>
-          </div>
+        <div class="readout" aria-live="polite">
+          <span class="lbl">Soit en colonnes</span>
+          <span class="val"><span id="colsReadout">6</span><span class="u">col.</span></span>
         </div>
+        <hr class="sep">
         <div class="field">
           <label>Revenu par colonne / jour</label>
           <div class="input">
@@ -692,9 +690,10 @@
         <div class="readout"><span class="lbl">Prix machine</span><span class="val"><span id="priceBrut">—</span><span class="u">CHF</span></span></div>
         <div class="readout"><span class="lbl">Installation &amp; livraison</span><span class="val"><span id="installCost">—</span><span class="u">CHF</span></span></div>
         <div class="readout"><span class="lbl">OPEX — frais d'exploitation an 1</span><span class="val"><span id="opexYear1">—</span><span class="u">CHF</span></span></div>
-        <div class="field-compact" style="border-top:1px solid var(--wc-border-subtle);margin-top:8px;padding-top:10px">
+        <hr class="sep">
+        <div class="field">
           <label for="discountPct">Rabais commercial</label>
-          <div class="input" style="width:110px;height:38px">
+          <div class="input">
             <input type="number" id="discountPct" min="0" max="80" step="5" value="30" inputmode="numeric" autocomplete="off">
             <span class="unit">%</span>
           </div>
@@ -901,7 +900,7 @@
   }
 
   function renderInputs(p){
-    $('colsReadout').value = p.cols;
+    $('colsReadout').textContent = p.cols;
     $('priceBrut').textContent = fmt(p.priceBrut);
     $('installCost').textContent = fmt(p.installNet);
     $('opexYear1').textContent = fmt(p.opex);
