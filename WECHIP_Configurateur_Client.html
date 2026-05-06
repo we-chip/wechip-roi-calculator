@@ -23,6 +23,9 @@
   }
 
   .wrap{max-width:1320px;margin:0 auto;padding:32px 28px 56px}
+  @media(max-width:600px){
+    .wrap{padding:16px 12px 40px}
+  }
 
   /* ── HEADER ─────────────────────────────────────────────── */
   header.app-head{
@@ -74,41 +77,30 @@
     background:var(--wc-surface-card);
     border:1px solid var(--wc-border-subtle);
     border-radius:var(--wc-radius-lg);
-    padding:28px 32px;
+    padding:24px;
     margin-bottom:24px;
     box-shadow:var(--wc-shadow-card);
     display:grid;
-    grid-template-columns:1fr auto 1fr auto 1.3fr;
-    grid-template-rows:auto auto 1fr;
-    gap:0 24px;align-items:start;
+    grid-template-columns:1fr auto 1fr auto 1fr;
+    gap:0 12px;align-items:start;
   }
-  @media(max-width:900px){
-    .hero-banner{grid-template-columns:1fr;gap:18px;padding:22px 22px}
-    .hero-arrow{display:none}
-    .hero-step{border-top:1px solid var(--wc-border-subtle);padding-top:18px}
-    .hero-step:first-child{border-top:none;padding-top:0}
-  }
-
-  /* Each step spans all 3 rows; inner content uses subgrid-style alignment
-     so the step-tag, big number, and caption line up across columns. */
   .hero-step{
-    display:grid;
-    grid-template-rows:subgrid;
-    grid-row:1 / span 3;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
     min-width:0;
-    row-gap:10px;
   }
-  @supports not (grid-template-rows: subgrid){
-    .hero-step{display:flex;flex-direction:column;gap:10px}
+  .hero-arrow{
+    color:var(--wc-ink-200);
+    display:flex;align-items:center;justify-content:center;
   }
-  .hero-arrow{grid-row:2}
+  .hero-arrow svg{width:24px;height:14px;display:block}
   .hero-step .step-tag{
     display:inline-flex;align-items:center;gap:8px;
     font-family:var(--wc-font-display);
     font-size:12px;font-weight:var(--wc-w-bold);
     text-transform:uppercase;letter-spacing:1.5px;
     color:var(--wc-fg-2);
-    align-self:end;
     line-height:1.25;
   }
   .hero-step .step-tag .num{
@@ -124,13 +116,12 @@
 
   .hero-step .big{
     font-family:var(--wc-font-display);
-    font-size:38px;
+    font-size:clamp(24px, 3vw, 38px);
     font-weight:var(--wc-w-bold);
-    line-height:1;
+    line-height:1.1;
     color:var(--wc-fg-1);
     font-variant-numeric:tabular-nums;
     letter-spacing:var(--wc-tracking-tight);
-    white-space:nowrap;
   }
   .hero-step .big .unit{
     font-size:18px;color:var(--wc-fg-2);
@@ -140,7 +131,6 @@
     font-size:12px;color:var(--wc-fg-2);
     font-weight:var(--wc-w-medium);
     line-height:1.4;
-    align-self:start;
   }
   .hero-step.payback .big{color:var(--wc-brand-orange);}
   .hero-step.payback.danger .big{color:var(--wc-error);}
@@ -152,8 +142,8 @@
     display:grid;grid-template-columns:1fr 1fr;
     gap:0;
     border-top:1px solid var(--wc-border-subtle);
-    padding-top:10px;
-    align-self:start;
+    padding-top:8px;
+    margin-top:2px;
   }
   .return-grid .sub{
     padding:0 14px;
@@ -176,19 +166,12 @@
   .return-grid .sub .v.positive{color:var(--wc-success)}
   .return-grid .sub .v.negative{color:var(--wc-error)}
 
-  /* Connecting arrow */
-  .hero-arrow{
-    color:var(--wc-ink-200);
-    display:flex;align-items:center;justify-content:center;
-  }
-  .hero-arrow svg{width:32px;height:18px;display:block}
-
   /* Payback two-line caption (nominal + actualised) */
   .payback-detail{
     display:flex;flex-direction:column;gap:3px;
     border-top:1px solid var(--wc-border-subtle);
-    padding-top:10px;
-    align-self:start;
+    padding-top:8px;
+    margin-top:2px;
   }
   .payback-detail .pd-row{
     display:flex;justify-content:space-between;
@@ -196,6 +179,18 @@
   }
   .payback-detail .pd-row .k{color:var(--wc-fg-2);font-weight:var(--wc-w-medium)}
   .payback-detail .pd-row .v{font-weight:var(--wc-w-semibold);font-variant-numeric:tabular-nums}
+
+  @media(max-width:1100px){
+    .hero-banner{grid-template-columns:1fr;grid-template-rows:auto;gap:18px;padding:22px 18px}
+    .hero-arrow{display:none}
+    .hero-step{border-top:1px solid var(--wc-border-subtle);padding-top:18px;grid-row:auto;display:flex;flex-direction:column;gap:10px}
+    .hero-step:first-child{border-top:none;padding-top:0}
+    .hero-step .big{font-size:30px}
+  }
+  @media(max-width:600px){
+    .hero-banner{padding:18px 14px}
+    .hero-step .big{font-size:26px}
+  }
 
   /* ── LAYOUT ─────────────────────────────────────────────── */
   /* 3-column config strip: Configuration | Investissement | Hypothèses */
@@ -390,10 +385,78 @@
     background:var(--wc-ink-0);
     color:var(--wc-fg-1);
   }
-  .scenario-desc{
-    font-size:11.5px;color:var(--wc-fg-3);
-    font-weight:var(--wc-w-regular);
-    margin-bottom:4px;font-style:italic;
+
+  /* ── CHART ROW (chart + phases sidebar) ───────────────────── */
+  .chart-row{
+    display:grid;
+    grid-template-columns:1fr 300px;
+    gap:20px;
+    align-items:stretch;
+    margin-bottom:20px;
+  }
+  .chart-row > .chart-wrap{margin:0}
+  .chart-row > .phases-panel{margin:0}
+  @media(max-width:1100px){
+    .chart-row{grid-template-columns:1fr;gap:16px}
+  }
+
+  /* ── PHASE CARDS ─────────────────────────────────────────── */
+  .phases-panel .panel-head{margin-bottom:0}
+  .phase-card{
+    border:1px solid var(--wc-border-subtle);
+    border-radius:var(--wc-radius-md);
+    padding:16px 18px;
+    background:var(--wc-ink-0);
+    cursor:pointer;
+    transition:all var(--wc-duration-fast) var(--wc-easing);
+    user-select:none;
+  }
+  .phase-card:hover{
+    border-color:var(--wc-ink-400);
+  }
+  .phase-card--selected{background:var(--wc-ink-100)}
+  #phaseCard1.phase-card--selected{
+    border-color:var(--wc-brand-turquoise);
+    box-shadow:0 0 0 2px rgba(121,209,212,.20);
+  }
+  #phaseCard2.phase-card--selected{
+    border-color:var(--wc-brand-orange);
+    box-shadow:0 0 0 2px rgba(255,113,0,.15);
+  }
+  .phase-card-head{
+    font:var(--wc-w-bold) 13px/1.3 var(--wc-font-display);
+    color:var(--wc-fg-1);
+    display:flex;align-items:center;gap:6px;
+    margin-bottom:10px;
+    letter-spacing:.2px;
+  }
+  #phaseCard1 .phase-card-head{color:var(--wc-brand-turquoise)}
+  #phaseCard2 .phase-card-head{color:var(--wc-brand-orange)}
+  .phase-card-head .ico{
+    width:16px;height:16px;flex-shrink:0;
+  }
+  .phase-card-head .ico path{
+    stroke:currentColor;stroke-width:1.6;
+    fill:none;stroke-linecap:round;stroke-linejoin:round;
+  }
+  .phase-row{
+    display:flex;justify-content:space-between;align-items:center;
+    font-size:12px;padding:5px 0;
+    border-bottom:1px solid var(--wc-border-subtle);
+    gap:8px;
+  }
+  .phase-row:last-child{border-bottom:none}
+  .phase-label{color:var(--wc-fg-2)}
+  .phase-val{font-weight:var(--wc-w-semibold);color:var(--wc-fg-1);text-align:right;white-space:nowrap}
+  .phase-val--dynamic{
+    font-variant-numeric:tabular-nums;
+  }
+  #phaseCard1 .phase-val--dynamic{color:var(--wc-brand-turquoise)}
+  #phaseCard2 .phase-val--dynamic{color:var(--wc-brand-orange)}
+  /* Chart phase highlight overlay */
+  .chart-phase-overlay{
+    pointer-events:none;
+    transition:opacity .2s ease, fill .2s ease;
   }
 
   /* ── COLLAPSIBLE ─────────────────────────────────────────── */
@@ -448,6 +511,7 @@
     border:1px solid var(--wc-border-subtle);
     border-radius:var(--wc-radius-lg);
     padding:24px;position:relative;
+    overflow:hidden;
   }
   .chart-head{
     display:flex;justify-content:space-between;align-items:center;
@@ -463,12 +527,16 @@
   .chart-legend i{display:inline-block;width:10px;height:10px;border-radius:2px}
   .chart-legend i.dash{
     width:14px;height:0;border:0;
-    border-top:2px dashed var(--wc-brand-orange);
+    border-top:2px dashed var(--wc-success);
     border-radius:0;background:none;align-self:center;
   }
   svg.chart{
-    width:100%;height:280px;display:block;
+    width:100%;height:100%;min-height:280px;display:block;
     font:var(--wc-w-medium) 11px/1 var(--wc-font-display);
+  }
+  @media(max-width:700px){
+    .chart-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    svg.chart{min-width:600px}
   }
   .chart-tooltip{
     position:absolute;pointer-events:none;
@@ -514,7 +582,12 @@
     border-radius:var(--wc-radius-lg);
     padding:24px;
   }
+  .table-scroll{
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+  }
   table.years{
+    min-width:900px;
     width:100%;border-collapse:collapse;
     font-size:11.5px;
     font-variant-numeric:tabular-nums;
@@ -556,9 +629,19 @@
   table.years td.pos{color:var(--wc-success);font-weight:var(--wc-w-semibold)}
   table.years tr.sep-row td{border-bottom:2px solid var(--wc-ink-200)}
   table.years tr.spacer td{height:6px;padding:0;border-bottom:none;background:none}
+  table.years tr.modele-row td{border-bottom:1px solid var(--wc-border-subtle);padding-top:2px;padding-bottom:4px}
   table.years tbody tr:hover td{background:var(--wc-ink-75)}
   table.years thead th:last-child,
   table.years tbody td:last-child{border-left:2px solid var(--wc-ink-200);padding-left:10px}
+  /* Phase highlight in table */
+  table.years[data-highlight-phase="1"] th[data-col-phase="1"],
+  table.years[data-highlight-phase="1"] td[data-col-phase="1"]{
+    background:rgba(121,209,212,0.10);
+  }
+  table.years[data-highlight-phase="2"] th[data-col-phase="2"],
+  table.years[data-highlight-phase="2"] td[data-col-phase="2"]{
+    background:rgba(255,113,0,0.08);
+  }
 
   /* ── FOOTER ─────────────────────────────────────────────── */
   footer.app-foot{
@@ -608,7 +691,7 @@
     </div>
   </header>
 
-  <!-- HERO STORY: Investment → Payback → 10-Year Return -->
+  <!-- HERO STORY: Investment → Payback → 15-Year Return -->
   <section class="hero-banner" aria-label="Synthèse financière" aria-live="polite">
     <div class="hero-step invest">
       <div class="step-tag"><span class="num">1</span> Investissement initial</div>
@@ -627,10 +710,10 @@
       <svg viewBox="0 0 32 18" fill="none"><path d="M2 9 H28 M22 3 L28 9 L22 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </div>
     <div class="hero-step return">
-      <div class="step-tag"><span class="num">3</span> Rendement à 10 ans</div>
+      <div class="step-tag"><span class="num">3</span> Gain net à 15 ans</div>
       <div class="big" id="kpiProfit10">—<span class="unit">CHF</span></div>
       <div class="return-grid">
-        <div class="sub"><div class="k">ROI</div><div class="v" id="kpiROI">—</div></div>
+        <div class="sub"><div class="k">ROI nominal</div><div class="v" id="kpiROI">—</div></div>
         <div class="sub"><div class="k">VAN (5 %)</div><div class="v" id="kpiNPV10">—</div></div>
       </div>
     </div>
@@ -678,13 +761,11 @@
           <span class="val"><span id="colsReadout">6</span><span class="u">col.</span></span>
         </div>
         <hr class="sep">
-        <div class="field">
-          <label>Revenu par colonne / jour</label>
-          <div class="input">
-            <input type="number" id="revPerColDay" min="1" max="30" step="0.5" value="6" inputmode="decimal" autocomplete="off">
-            <span class="unit">CHF</span>
-          </div>
+        <div class="readout">
+          <span class="lbl">Rendement moyen par jour <span style="font-weight:var(--wc-w-medium);color:var(--wc-fg-3)">(à taux 100%)</span></span>
+          <span class="val"><span id="revDayReadout">20</span><span class="u">CHF</span></span>
         </div>
+        <input type="hidden" id="revPerColDay" value="5">
       </div>
 
       <div class="panel">
@@ -707,53 +788,68 @@
       <div class="panel">
           <div class="panel-head">Hypothèses d'exploitation</div>
         <div id="hypoBody">
-          <div style="margin-top:16px">
-            <div class="scenario-switch" role="group" aria-label="Choix du scénario d'exploitation">
-              <button class="scenario-btn active" data-scenario="growth" id="btnGrowth" type="button" aria-pressed="true">
-                <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M3 17 L9 11 L13 15 L21 7" />
-                  <path d="M15 7 L21 7 L21 13" />
-                </svg>
-                Croissance
-              </button>
-              <button class="scenario-btn" data-scenario="steady" id="btnSteady" type="button" aria-pressed="false">
-                <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M4 18 C 8 18, 8 6, 12 6 C 16 6, 16 18, 20 18" />
-                </svg>
-                Exploitation
-              </button>
-            </div>
-            <div class="scenario-desc" id="scenarioDesc">Montée progressive du taux de rotation sur 5 ans</div>
-          </div>
-          <div class="info-block" style="margin-top:14px">
-            <div class="section-label">Exploitation</div>
+          <div class="info-block" style="margin-top:16px">
             <div class="row"><span>Jours d'exploitation</span><span class="val">303 j/an</span></div>
             <div class="row"><span>Taux d'actualisation</span><span class="val">5 %</span></div>
-            <div class="row"><span>Remplacement électronique</span><span class="val">Année 6</span></div>
-            <div class="section-label">Partage des revenus</div>
-            <div class="row"><span>Avant breakeven</span><span class="val">100 % client</span></div>
-            <div class="row"><span>Après breakeven</span><span class="val">50 / 50</span></div>
-            <div class="note">Maintenance <em>et</em> remplacement électronique couverts par WECHIP dès que le partage est actif</div>
-            <div class="section-label">Taux d'exploitation (% capacité)</div>
+            <div class="row"><span>Remplacement électronique</span><span class="val">Années 6 et 11</span></div>
+          </div>
+          <div class="info-block" style="margin-top:14px">
+            <div class="section-label">Taux de rendement</div>
             <div id="rotationDetail"></div>
+            <div class="note" style="margin-top:10px;font-size:12px;color:var(--wc-fg-2)">Le rendement moyen est lié au taux de rotation journalier des casiers, au regroupage de colis et aux usages alternatifs.</div>
           </div>
         </div>
       </div>
   </div>
 
-  <!-- FULL-WIDTH CHART -->
-  <div class="chart-wrap">
-    <div class="chart-head">
-      <div class="panel-head">Projection 10 ans</div>
-      <div class="chart-legend" aria-label="Légende du graphique">
-        <span><i style="background:var(--wc-ink-1000)"></i> Flux cumulé</span>
+  <!-- CHART + PHASES SIDE BY SIDE -->
+  <div class="chart-row">
+    <div class="chart-wrap">
+      <div class="chart-head">
+        <div class="panel-head">Projection 15 ans</div>
+        <div class="chart-legend" aria-label="Légende du graphique">
+          <span><i style="background:var(--wc-ink-1000)"></i> Flux cumulé</span>
         <span><i style="background:var(--wc-success)"></i> Revenus</span>
-        <span><i style="background:var(--wc-error)"></i> Coûts</span>
+        <span><i style="background:var(--wc-error)"></i> OPEX</span>
         <span><i class="dash" aria-hidden="true"></i> Breakeven</span>
       </div>
     </div>
-    <svg class="chart" id="chart" viewBox="0 0 800 280" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Projection 10 ans des revenus, coûts et flux cumulé"></svg>
+    <svg class="chart" id="chart" viewBox="0 0 800 360" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Projection 15 ans des revenus, coûts et flux cumulé"></svg>
     <div class="chart-tooltip" id="tooltip"></div>
+  </div>
+
+    <!-- Phases panel (sidebar) -->
+    <div class="panel phases-panel">
+      <div class="panel-head">Modèle en 2 phases</div>
+      <div class="phase-card" id="phaseCard1" style="margin-top:16px" role="button" tabindex="0" aria-pressed="false">
+        <div class="phase-card-head">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 17 L9 11 L13 15 L21 7" />
+            <path d="M15 7 L21 7 L21 13" />
+          </svg>
+          Croissance
+        </div>
+        <div class="phase-card-body">
+          <div class="phase-row"><span class="phase-label">Revenus</span><span class="phase-val">100 % client</span></div>
+          <div class="phase-row"><span class="phase-label">OPEX</span><span class="phase-val">À charge du client</span></div>
+          <div class="phase-row"><span class="phase-label">Durée</span><span class="phase-val phase-val--dynamic" id="phaseDuration1">—</span></div>
+        </div>
+      </div>
+      <div class="phase-card" id="phaseCard2" style="margin-top:12px" role="button" tabindex="0" aria-pressed="false">
+        <div class="phase-card-head">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 12 L20 12" />
+            <path d="M4 8 L12 8 L12 16 L20 16" />
+          </svg>
+          Partage
+        </div>
+        <div class="phase-card-body">
+          <div class="phase-row"><span class="phase-label">Revenus</span><span class="phase-val">60 % WECHIP</span></div>
+          <div class="phase-row"><span class="phase-label">OPEX</span><span class="phase-val">Couverts par WECHIP</span></div>
+          <div class="phase-row"><span class="phase-label">Durée</span><span class="phase-val phase-val--dynamic" id="phaseDuration2">—</span></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- FULL-WIDTH TABLE (sits below the layout grid) -->
@@ -762,14 +858,16 @@
     <button type="button" class="collapse-toggle" id="costToggle"
          aria-expanded="false" aria-controls="costBody"
          style="margin-bottom:12px;padding:10px 14px;background:var(--wc-ink-75);border:1px solid var(--wc-border-subtle);border-radius:var(--wc-radius-md);width:100%">
-      <span style="font-size:12px;color:var(--wc-fg-1);font-weight:var(--wc-w-semibold)">Composition des coûts totaux</span>
+      <span style="font-size:12px;color:var(--wc-fg-1);font-weight:var(--wc-w-semibold)">Composition des coûts</span>
       <span class="arrow" aria-hidden="true">▶</span>
     </button>
     <div class="collapse-body" id="costBody">
       <div class="info-block" id="costBreakdown"
            style="margin-bottom:16px;padding:16px 18px;background:var(--wc-ink-75);border-radius:var(--wc-radius-md);border:1px solid var(--wc-border-subtle)"></div>
     </div>
-    <table class="years" id="yearTable"></table>
+    <div class="table-scroll">
+      <table class="years" id="yearTable"></table>
+    </div>
   </div>
 
   <footer class="app-foot">
@@ -785,13 +883,32 @@
   // ─────────────────────────────────────────────────────────────
   const DAYS         = 303;
   const NPV_RATE     = 0.05;
-  const REPL_YEAR    = 6;
-  const WECHIP_SHARE = 0.50;
-  const HORIZON      = 10;
+  const REPL_YEARS   = [6, 11];
+  const WECHIP_SHARE = 0.60;
+  const HORIZON      = 15;
   const START_YEAR   = new Date().getFullYear();
 
-  const ROT_GROWTH = [0, 0.10, 0.25, 0.65, 0.75, 0.80, 0.85, 0.85, 0.85, 0.85, 0.85];
-  const ROT_STEADY = [0, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85];
+  const REND_START      = 0.10;
+  const REND_CAP        = 0.85;
+  const REND_RAMP_YEARS = 6;
+  const REND_GROWTH_ANCHORS = {
+    1: REND_START,
+    2: 0.35,
+    3: 0.60,
+    4: 0.75,
+    5: 0.80,
+    6: REND_CAP
+  };
+
+  function buildSmoothGrowthRendement(){
+    const values = [0];
+    for (let y = 1; y <= HORIZON; y++) {
+      values[y] = y <= REND_RAMP_YEARS ? REND_GROWTH_ANCHORS[y] : REND_CAP;
+    }
+    return values;
+  }
+
+  const ROT_GROWTH = buildSmoothGrowthRendement();
 
   const MODELS = {
     filaire: {
@@ -801,14 +918,13 @@
     },
     solaire: {
       label:     'Solaire',
-      base:      { brut: 22000, install: 1500, opex: 1200, replCost: 1500 },
+      base:      { brut: 22000, install: 1500, opex: 1300, replCost: 1500 },
       perModule: { brut:  6000, install:  500, opex:  200, replCost:  250 }
     }
   };
 
-  let currentScenario = 'growth';
   let currentModel    = 'filaire';
-  const getRotation = () => currentScenario === 'steady' ? ROT_STEADY : ROT_GROWTH;
+  const getRotation = () => ROT_GROWTH;
 
   function pricingFromModules(m){
     const extra = Math.max(0, m - 2);
@@ -846,8 +962,10 @@
 
   function clampInput(id, min, max, fallback, step){
     const el = $(id);
-    let v = parseFloat(el.value);
-    if (isNaN(v)) v = fallback;
+    // Number() is stricter than parseFloat — rejects "5abc" → NaN → fallback,
+    // instead of silently coercing to 5.
+    let v = Number(el.value);
+    if (!Number.isFinite(v)) v = fallback;
     v = Math.max(min, Math.min(max, v));
     if (step && step > 0) v = Math.round(v / step) * step;
     el.value = v;
@@ -857,12 +975,14 @@
   function read(){
     const modules      = clampInput('modulesInput', 2, 8, 2, 1);
     const cols         = modules * 2;
-    const revPerColDay = clampInput('revPerColDay', 0.5, 30, 6);
+    const revPerColDay = clampInput('revPerColDay', 0.5, 30, 5);
     const dPct         = clampInput('discountPct',  0, 80, 0) / 100;
 
     const pr        = pricingFromModules(modules);
     const brutTotal = pr.brut + pr.install + pr.opex;
-    const netTotal  = Math.max(0, brutTotal * (1 - dPct));
+    // Round once here so KPIs, compute(), and the cost breakdown all agree to
+    // the franc — avoids sub-CHF drift between displayed and computed values.
+    const netTotal  = Math.round(Math.max(0, brutTotal * (1 - dPct)));
     const rMachine  = pr.brut / brutTotal;
     const rInstall  = pr.install / brutTotal;
     const machineNet = Math.round(netTotal * rMachine);
@@ -878,37 +998,41 @@
   }
 
   function compute(p){
-    const rot = getRotation();
+    const baseRot = getRotation();
     let hCum = 0, beNominal = -1;
     for (let y = 1; y <= HORIZON; y++) {
-      const rev  = p.cols * p.revPerColDay * rot[y] * DAYS;
+      const rev  = p.cols * p.revPerColDay * baseRot[y] * DAYS;
       // Year 1 OPEX is included in investTotal (discounted), so skip it
-      const cost = (y === 1 ? p.investTotal : 0) + (y === 1 ? 0 : p.opex) + (y === REPL_YEAR ? p.replCost : 0);
+      const cost = (y === 1 ? p.investTotal : 0) + (y === 1 ? 0 : p.opex) + (REPL_YEARS.includes(y) ? p.replCost : 0);
       hCum += rev - cost;
       if (hCum >= 0 && beNominal < 0) beNominal = y;
     }
     const years = [];
     let cum = 0, cumNPV = 0, beActualise = -1;
     for (let y = 1; y <= HORIZON; y++) {
-      const revGross = p.cols * p.revPerColDay * rot[y] * DAYS;
       const post     = beNominal > 0 && y > beNominal;
+      // Rendement follows the published ramp regardless of breakeven status.
+      // The 60% WECHIP share split is independent and only kicks in post-breakeven.
+      const effectiveRot = baseRot[y];
+      const revGross = p.cols * p.revPerColDay * effectiveRot * DAYS;
       const share    = post ? revGross * WECHIP_SHARE : 0;
       const revNet   = revGross - share;
       const capex    = y === 1 ? p.investTotal : 0;
       // Year 1 OPEX already in capex (investTotal); subsequent years charge opex normally
-      const opex     = (y === 1 ? 0 : (post ? 0 : p.opex)) + (y === REPL_YEAR && !post ? p.replCost : 0);
+      const opex     = (y === 1 ? 0 : (post ? 0 : p.opex)) + (REPL_YEARS.includes(y) && !post ? p.replCost : 0);
       const cost     = capex + opex;
       const flow = revNet - cost;
       cum    += flow;
       cumNPV += flow / Math.pow(1 + NPV_RATE, y);
       if (cumNPV >= 0 && beActualise < 0) beActualise = y;
-      years.push({ y, rot: rot[y], revGross, share, revNet, capex, opex, cost, flow, cum, cumNPV, post, isBE: y === beNominal });
+      years.push({ y, rot: effectiveRot, baseRot: baseRot[y], revGross, share, revNet, capex, opex, cost, flow, cum, cumNPV, post, isBE: y === beNominal });
     }
     return { years, beNominal, beActualise };
   }
 
   function renderInputs(p){
     $('colsReadout').textContent = p.cols;
+    $('revDayReadout').textContent = fmt(p.cols * p.revPerColDay);
     $('priceBrut').textContent = fmt(p.priceBrut);
     $('installCost').textContent = fmt(p.installBrut);
     $('opexYear1').textContent = fmt(p.opexBrut);
@@ -918,8 +1042,8 @@
   }
 
   function renderKPIs(p,m){
-    const cum10 = m.years[HORIZON-1].cum;
-    const npv10 = m.years[HORIZON-1].cumNPV;
+    const cumHorizon = m.years[HORIZON-1].cum;
+    const npvHorizon = m.years[HORIZON-1].cumNPV;
     const beyond = `> ${HORIZON} ans`;
 
     // Step 1 — Investment
@@ -933,39 +1057,53 @@
 
     const detail = [];
     detail.push(
-      `<div class="pd-row"><span class="k">Nominal</span><span class="v" style="color:${m.beNominal>0?'var(--wc-success)':'var(--wc-error)'}">${m.beNominal>0?'Année '+m.beNominal:beyond}</span></div>`
+      `<div class="pd-row"><span class="k">Payback nominal</span><span class="v" style="color:${m.beNominal>0?'var(--wc-success)':'var(--wc-error)'}">${m.beNominal>0?'Année '+m.beNominal:beyond}</span></div>`
     );
     const actColor = m.beActualise > 0
       ? (m.beActualise <= 7 ? 'var(--wc-success)' : 'var(--wc-brand-orange)')
       : 'var(--wc-error)';
     detail.push(
-      `<div class="pd-row"><span class="k">Actualisé (VAN)</span><span class="v" style="color:${actColor}">${m.beActualise>0?'Année '+m.beActualise:beyond}</span></div>`
+      `<div class="pd-row"><span class="k">Payback actualisé</span><span class="v" style="color:${actColor}">${m.beActualise>0?'Année '+m.beActualise:beyond}</span></div>`
     );
     $('paybackDetail').innerHTML = detail.join('');
 
-    // Step 3 — 10-year return
+    // Step 3 — horizon return
     const profitEl = $('kpiProfit10');
-    profitEl.innerHTML = fmt(Math.round(cum10)) + '<span class="unit">CHF</span>';
-    profitEl.classList.toggle('positive', cum10 >= 0);
-    profitEl.classList.toggle('negative', cum10 < 0);
+    profitEl.innerHTML = fmt(Math.round(cumHorizon)) + '<span class="unit">CHF</span>';
+    profitEl.classList.toggle('positive', cumHorizon >= 0);
+    profitEl.classList.toggle('negative', cumHorizon < 0);
 
     const roiEl = $('kpiROI');
-    roiEl.textContent = p.investTotal > 0 ? pct(cum10/p.investTotal) : '—';
-    roiEl.classList.toggle('positive', cum10 >= 0);
-    roiEl.classList.toggle('negative', cum10 < 0);
+    roiEl.textContent = p.investTotal > 0 ? pct(cumHorizon/p.investTotal) : '—';
+    roiEl.classList.toggle('positive', cumHorizon >= 0);
+    roiEl.classList.toggle('negative', cumHorizon < 0);
 
     const npvEl = $('kpiNPV10');
-    npvEl.textContent = fmt(Math.round(npv10));
-    npvEl.classList.toggle('positive', npv10 >= 0);
-    npvEl.classList.toggle('negative', npv10 < 0);
+    npvEl.textContent = fmt(Math.round(npvHorizon));
+    npvEl.classList.toggle('positive', npvHorizon >= 0);
+    npvEl.classList.toggle('negative', npvHorizon < 0);
+
+    // Phase duration cards
+    currentBeNominal = m.beNominal;
+    if (m.beNominal > 0) {
+      $('phaseDuration1').textContent = `Années 1–${m.beNominal}`;
+      $('phaseDuration2').textContent = `Années ${m.beNominal + 1}–${HORIZON}`;
+    } else {
+      $('phaseDuration1').textContent = `Années 1–${HORIZON} (pas de breakeven)`;
+      $('phaseDuration2').textContent = '—';
+    }
   }
 
   let chartData = null;
   let chartXs = null;
+  let chartGeom = null;
+  let selectedPhase = 0; // 0 = none, 1 = Croissance, 2 = Partage
+  let lockedPhase = 0;   // 0 = none; when locked, hover doesn't change
+  let currentBeNominal = 0;
 
   function renderChart(p,m){
     const svg=$('chart');
-    const W=800,H=280,ml=68,mr=18,mt=18,mb=36;
+    const W=800,H=360,ml=68,mr=18,mt=18,mb=36;
     const iW=W-ml-mr, iH=H-mt-mb;
     const colW = iW/HORIZON;
     const xs=m.years.map((_,i)=>ml+(i+.5)*colW);
@@ -983,10 +1121,11 @@
     let bars='';
     for(let i=0;i<HORIZON;i++){
       const cx=xs[i], y0=yPx(0);
+      const isPost = m.years[i].post;
       const rt=yPx(revs[i]);
-      bars+=`<rect class="bar" data-i="${i}" x="${(cx-bW-1).toFixed(1)}" y="${Math.min(rt,y0).toFixed(1)}" width="${bW.toFixed(1)}" height="${Math.abs(rt-y0).toFixed(1)}" fill="var(--wc-success)" opacity=".88" rx="3"/>`;
+      bars+=`<rect class="bar bar-rev" data-i="${i}" data-phase="${isPost?2:1}" x="${(cx-bW-1).toFixed(1)}" y="${Math.min(rt,y0).toFixed(1)}" width="${bW.toFixed(1)}" height="${Math.abs(rt-y0).toFixed(1)}" fill="var(--wc-success)" opacity=".88" rx="3"/>`;
       const ct=yPx(-costs[i]);
-      bars+=`<rect class="bar" data-i="${i}" x="${(cx+1).toFixed(1)}" y="${Math.min(ct,y0).toFixed(1)}" width="${bW.toFixed(1)}" height="${Math.abs(ct-y0).toFixed(1)}" fill="var(--wc-error)" opacity=".85" rx="3"/>`;
+      bars+=`<rect class="bar bar-cost" data-i="${i}" data-phase="${m.years[i].post?2:1}" x="${(cx+1).toFixed(1)}" y="${Math.min(ct,y0).toFixed(1)}" width="${bW.toFixed(1)}" height="${Math.abs(ct-y0).toFixed(1)}" fill="var(--wc-error)" opacity=".85" rx="3"/>`;
     }
 
     let hitZones='';
@@ -1015,8 +1154,8 @@
     let pm='';
     if(m.beNominal>0 && m.beNominal<=HORIZON){
       const px=xs[m.beNominal-1];
-      pm=`<line x1="${px}" y1="${mt}" x2="${px}" y2="${H-mb}" stroke="#FF7100" stroke-dasharray="4 3" stroke-width="1.5"/>
-        <text x="${px}" y="${mt-4}" text-anchor="middle" fill="#FF7100" font-size="10.5" font-weight="700">Breakeven</text>`;
+      pm=`<line x1="${px}" y1="${mt}" x2="${px}" y2="${H-mb}" stroke="#00A63E" stroke-dasharray="4 3" stroke-width="1.5"/>
+        <text x="${px}" y="${mt-4}" text-anchor="middle" fill="#00A63E" font-size="10.5" font-weight="700">Breakeven</text>`;
     }
 
     const lastIdx = HORIZON - 1;
@@ -1029,9 +1168,16 @@
 
     const hoverLine = `<line id="hoverLine" x1="0" y1="${mt}" x2="0" y2="${H-mb}" stroke="#142429" stroke-width="1" opacity="0" stroke-dasharray="2 2"/>`;
 
-    svg.innerHTML = grid + bars + pm + yL + xL +
+    // Phase highlight overlay (initially hidden)
+    const phaseOverlay = `<rect id="phaseOverlay" class="chart-phase-overlay" x="0" y="${mt}" width="0" height="${iH}" fill="var(--wc-brand-turquoise)" opacity="0"/>`;
+
+    svg.innerHTML = grid + phaseOverlay + bars + pm + yL + xL +
       `<path d="${areaPath}" fill="#142429" opacity=".06"/>` +
       `<path d="${linePath}" fill="none" stroke="#142429" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>` + dots + hoverLine + hitZones;
+
+    // Store chart geometry for phase highlight
+    chartGeom = { ml, colW, mt, iH };
+    updatePhaseHighlight();
 
     svg.querySelectorAll('.hit-zone').forEach(zone=>{
       zone.addEventListener('mouseenter', showTooltip);
@@ -1078,10 +1224,108 @@
     $('hoverLine').setAttribute('opacity','0');
   }
 
+  function updatePhaseHighlight(){
+    const overlay = document.getElementById('phaseOverlay');
+    if (!overlay || !chartGeom) return;
+    // Dim non-selected bars
+    const svg = $('chart');
+    svg.querySelectorAll('.bar').forEach(bar => {
+      const phase = parseInt(bar.dataset.phase, 10);
+      if (selectedPhase === 0) {
+        bar.style.opacity = '';
+      } else {
+        bar.style.opacity = (phase === selectedPhase) ? '' : '0.25';
+      }
+    });
+    // Table highlight
+    const tbl = $('yearTable');
+    if(tbl) {
+      if(selectedPhase === 0) tbl.removeAttribute('data-highlight-phase');
+      else tbl.setAttribute('data-highlight-phase', selectedPhase);
+    }
+    // Overlay color + position
+    const { ml, colW, mt, iH } = chartGeom;
+    const be = currentBeNominal;
+    if (selectedPhase === 0) {
+      overlay.setAttribute('opacity', '0');
+      return;
+    }
+    // Set color based on phase
+    overlay.setAttribute('fill', selectedPhase === 1 ? 'var(--wc-brand-turquoise)' : 'var(--wc-brand-orange)');
+    let x, w;
+    if (selectedPhase === 1) {
+      const end = be > 0 ? be : HORIZON;
+      x = ml;
+      w = end * colW;
+    } else {
+      if (be > 0 && be < HORIZON) {
+        x = ml + be * colW;
+        w = (HORIZON - be) * colW;
+      } else {
+        overlay.setAttribute('opacity', '0');
+        return;
+      }
+    }
+    overlay.setAttribute('x', x.toFixed(1));
+    overlay.setAttribute('width', w.toFixed(1));
+    overlay.setAttribute('opacity', '0.08');
+  }
+
+  function showPhase(phase){
+    selectedPhase = phase;
+    const c1 = $('phaseCard1'), c2 = $('phaseCard2');
+    c1.classList.toggle('phase-card--selected', selectedPhase === 1);
+    c2.classList.toggle('phase-card--selected', selectedPhase === 2);
+    c1.setAttribute('aria-pressed', selectedPhase === 1);
+    c2.setAttribute('aria-pressed', selectedPhase === 2);
+    updatePhaseHighlight();
+  }
+
+  function selectPhase(phase){
+    // Click toggles lock
+    if (lockedPhase === phase) {
+      lockedPhase = 0;
+      showPhase(0);
+    } else {
+      lockedPhase = phase;
+      showPhase(phase);
+    }
+  }
+
+  function hoverPhase(phase){
+    if (lockedPhase !== 0) return; // locked — ignore hover
+    showPhase(phase);
+  }
+
+  function leavePhase(){
+    if (lockedPhase !== 0) return; // locked — keep showing
+    showPhase(0);
+  }
+
+  $('phaseCard1').addEventListener('click', e => { e.stopPropagation(); selectPhase(1); });
+  $('phaseCard2').addEventListener('click', e => { e.stopPropagation(); selectPhase(2); });
+  $('phaseCard1').addEventListener('mouseenter', () => hoverPhase(1));
+  $('phaseCard2').addEventListener('mouseenter', () => hoverPhase(2));
+  $('phaseCard1').addEventListener('mouseleave', () => leavePhase());
+  $('phaseCard2').addEventListener('mouseleave', () => leavePhase());
+  $('phaseCard1').addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' '){e.preventDefault();selectPhase(1)} });
+  $('phaseCard2').addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' '){e.preventDefault();selectPhase(2)} });
+  // Click outside deselects everything
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.phases-panel') && !e.target.closest('[data-phase-btn]') && (lockedPhase !== 0 || selectedPhase !== 0)) {
+      lockedPhase = 0;
+      showPhase(0);
+    }
+  });
+
   function renderTable(p,m){
     const tbl=$('yearTable');
+
     let h='<thead><tr><th scope="col"><span class="sr-only">Indicateur</span></th>';
-    for(let i=0;i<HORIZON;i++) h+=`<th scope="col">A${i+1}<div style="font-weight:var(--wc-w-medium);color:var(--wc-fg-3);font-size:10px;margin-top:2px">${START_YEAR+i}</div></th>`;
+    for(let i=0;i<HORIZON;i++){
+      const ph = m.years[i].post ? 2 : 1;
+      h+=`<th scope="col" data-col-phase="${ph}">A${i+1}<div style="font-weight:var(--wc-w-medium);color:var(--wc-fg-3);font-size:10px;margin-top:2px">${START_YEAR+i}</div></th>`;
+    }
     h+='<th scope="col">Total</th></tr></thead>';
 
     const sum=fn=>m.years.reduce((a,y)=>a+fn(y),0);
@@ -1089,12 +1333,22 @@
     const row=(label,fn,opts={})=>{
       const isSub = opts.subtotal;
       let r=`<tr${isSub?' class="sep-row"':''}><th scope="row">${isSub?'<strong>'+label+'</strong>':label}</th>`;
-      m.years.forEach(y=>{
-        const v=fn(y); let c='';
-        if(opts.alwaysNeg) c=v!==0?'neg':'';
-        else if(opts.signed) c=v<0?'neg':v>0?'pos':'';
-        r+=`<td class="${c}">${isSub?'<strong>'+fmt(v)+'</strong>':fmt(v)}</td>`;
-      });
+      let i=0;
+      while(i<m.years.length){
+        const y=m.years[i]; const v=fn(y); const ph=y.post?2:1;
+        if(opts.postLabel && y.post && v===0){
+          let span=1;
+          while(i+span<m.years.length && m.years[i+span].post && fn(m.years[i+span])===0) span++;
+          r+=`<td colspan="${span}" data-col-phase="2" style="color:var(--wc-fg-3);font-size:9px;text-align:center">${opts.postLabel}</td>`;
+          i+=span;
+        } else {
+          let c='';
+          if(opts.alwaysNeg) c=v!==0?'neg':'';
+          else if(opts.signed) c=v<0?'neg':v>0?'pos':'';
+          r+=`<td class="${c}" data-col-phase="${ph}">${isSub?'<strong>'+fmt(v)+'</strong>':fmt(v)}</td>`;
+          i++;
+        }
+      }
       const t=sum(fn), tc=opts.alwaysNeg?(t!==0?'neg':''):(opts.signed?(t<0?'neg':t>0?'pos':''):'');
       r+=`<td class="${tc}"><strong>${fmt(t)}</strong></td></tr>`;
       return r;
@@ -1102,57 +1356,79 @@
 
     const rowNoTotal=(label,fn)=>{
       let r=`<tr><th scope="row">${label}</th>`;
-      m.years.forEach(y=>{ r+=`<td>${fmt(fn(y),{d:0})}</td>`; });
+      m.years.forEach((y,i)=>{ const ph=y.post?2:1; r+=`<td data-col-phase="${ph}">${fmt(fn(y),{d:0})}</td>`; });
       r+='<td></td></tr>';
       return r;
     };
 
-    let status='<tr style="font-size:10.5px"><th scope="row">Modèle</th>';
-    m.years.forEach(y=>{
-      if(y.isBE) status+='<td style="color:var(--wc-success);font-weight:var(--wc-w-bold)">Breakeven</td>';
-      else if(y.post) status+='<td style="color:var(--wc-brand-orange);font-weight:var(--wc-w-semibold)">Partage</td>';
-      else status+='<td style="color:var(--wc-fg-3)">Frais fixes</td>';
-    });
-    status+='<td></td></tr>';
-
     let cumR='<tr class="sep-row"><th scope="row"><strong>Flux cumulé</strong></th>';
-    m.years.forEach(y=>{cumR+=`<td class="${y.cum<0?'neg':y.cum>0?'pos':''}"><strong>${fmt(Math.round(y.cum))}</strong></td>`;});
+    m.years.forEach((y,i)=>{const ph=y.post?2:1; cumR+=`<td class="${y.cum<0?'neg':y.cum>0?'pos':''}" data-col-phase="${ph}"><strong>${fmt(Math.round(y.cum))}</strong></td>`;});
     cumR+='<td></td></tr>';
 
     const lastNPV = m.years[HORIZON-1].cumNPV;
     let vanR='<tr><th scope="row"><strong>VAN cumulée</strong></th>';
-    m.years.forEach(y=>{vanR+=`<td class="${y.cumNPV<0?'neg':y.cumNPV>0?'pos':''}">${fmt(Math.round(y.cumNPV))}</td>`;});
+    m.years.forEach(y=>{const ph=y.post?2:1; vanR+=`<td class="${y.cumNPV<0?'neg':y.cumNPV>0?'pos':''}" data-col-phase="${ph}">${fmt(Math.round(y.cumNPV))}</td>`;});
     vanR+=`<td class="${lastNPV<0?'neg':lastNPV>0?'pos':''}"><strong>${fmt(Math.round(lastNPV))}</strong></td></tr>`;
 
     const spacer = `<tr class="spacer">${'<td></td>'.repeat(HORIZON+2)}</tr>`;
 
+    // Modèle row — grouped with colspan + centered separator at switch
+    let modeleR = '<tr class="modele-row"><th scope="row">Modèle</th>';
+    let i = 0;
+    const phases = [];
+    while (i < HORIZON) {
+      const ph = m.years[i].post ? 2 : 1;
+      let span = 1;
+      while (i + span < HORIZON && (m.years[i + span].post ? 2 : 1) === ph) span++;
+      phases.push({ ph, span, start: i });
+      i += span;
+    }
+    phases.forEach((p, idx) => {
+      const label = p.ph === 1 ? 'Croissance' : 'Partage';
+      const color = p.ph === 1 ? 'var(--wc-brand-turquoise)' : 'var(--wc-brand-orange)';
+      const isLast = idx === phases.length - 1;
+      const sep = !isLast ? 'border-right:1px dashed var(--wc-ink-300);' : '';
+      modeleR += `<td colspan="${p.span}" data-col-phase="${p.ph}" data-phase-btn="${p.ph}" style="${sep}color:${color};font-weight:var(--wc-w-semibold);font-size:10px;text-align:center;cursor:pointer">${label}</td>`;
+    });
+    modeleR += '<td></td></tr>';
+
     tbl.innerHTML = h+'<tbody>'+
-      rowNoTotal('Exploitation (%)', y=>y.rot*100)+
+      row('Investissement (CAPEX)', y=>Math.round(y.capex), {alwaysNeg:true, postLabel:'—'})+
+      row('Exploitation (OPEX)', y=>Math.round(y.opex), {alwaysNeg:true, postLabel:'WECHIP'})+
       spacer+
-      row('Revenu brut', y=>Math.round(y.revGross))+
+      rowNoTotal('Rendement (%)', y=>y.rot*100)+
+      row('Revenu brut', y=>Math.round(y.revGross), {signed:true})+
       row('Part WECHIP', y=>Math.round(y.share), {alwaysNeg:true})+
       row('Revenu net client', y=>Math.round(y.revNet), {signed:true, subtotal:true})+
       spacer+
-      row('Investissement (CAPEX)', y=>Math.round(y.capex), {alwaysNeg:true})+
-      row('Exploitation (OPEX)', y=>Math.round(y.opex), {alwaysNeg:true})+
       row('Flux net annuel', y=>Math.round(y.flow), {signed:true, subtotal:true})+
       spacer+
       cumR+vanR+
-      status+
+      spacer+
+      modeleR+
       '</tbody>';
+
+    // Make modèle row cells hoverable (preview) and clickable (lock)
+    tbl.querySelectorAll('[data-phase-btn]').forEach(td => {
+      td.addEventListener('click', e => {
+        e.stopPropagation();
+        selectPhase(parseInt(td.dataset.phaseBtn, 10));
+      });
+      td.addEventListener('mouseenter', () => hoverPhase(parseInt(td.dataset.phaseBtn, 10)));
+      td.addEventListener('mouseleave', () => leavePhase());
+    });
   }
 
   function renderCostBreakdown(p, m){
     const beY    = m.beNominal > 0 ? m.beNominal : HORIZON + 1;
-    const isPost6 = REPL_YEAR > beY;
     const cfg     = MODELS[currentModel] || MODELS.filaire;
     const extra   = Math.max(0, p.modules - 2);
 
     let h = '';
-    h += `<div class="section-label">Investissement — Année 1 uniquement</div>`;
-    h += `<div class="row"><span>Machine</span><span class="val">${fmt(Math.round(p.priceBrut))} CHF</span></div>`;
+    h += `<div class="section-label">Investissement — Année 1</div>`;
+    h += `<div class="row"><span>WECHIP ${p.cols} col. ${cfg.label.toLowerCase()}</span><span class="val">${fmt(Math.round(p.priceBrut))} CHF</span></div>`;
     h += `<div class="row"><span>Installation &amp; livraison</span><span class="val">${fmt(Math.round(p.installBrut))} CHF</span></div>`;
-    h += `<div class="row"><span>Exploitation Année 1</span><span class="val">${fmt(Math.round(p.opexBrut))} CHF</span></div>`;
+    h += `<div class="row"><span>Frais d'exploitation Année 1</span><span class="val">${fmt(Math.round(p.opexBrut))} CHF</span></div>`;
     const brutSum = p.priceBrut + p.installBrut + p.opexBrut;
     const rabais = Math.round(brutSum - p.investTotal);
     if (rabais > 0) {
@@ -1163,7 +1439,7 @@
             <span class="val" style="font-weight:var(--wc-w-bold)">${fmt(Math.round(p.investTotal))} CHF</span>
           </div>`;
 
-    h += `<div class="section-label">OPEX — maintenance annuelle (années 2+, avant breakeven)</div>`;
+    h += `<div class="section-label">OPEX — Maintenance annuelle A2 – A${beY < HORIZON ? beY : HORIZON}</div>`;
     if (extra > 0) {
       h += `<div class="row"><span>Base (${cfg.label} — 2 modules)</span><span class="val">${fmt(cfg.base.opex)} CHF</span></div>`;
       h += `<div class="row"><span>+${extra} module${extra>1?'s':''} supplémentaire${extra>1?'s':''} × ${fmt(cfg.perModule.opex)} CHF</span><span class="val">${fmt(extra * cfg.perModule.opex)} CHF</span></div>`;
@@ -1175,34 +1451,16 @@
       h += `<div class="row"><span>Maintenance &amp; exploitation</span><span class="val">${fmt(p.opex)} CHF/an</span></div>`;
     }
 
-    h += `<div class="section-label">Remplacement électronique — Année ${REPL_YEAR}</div>`;
-    if (isPost6) {
-      h += `<div class="row"><span>OPEX</span><span class="val" style="color:var(--wc-success)">0 CHF (couvert par WECHIP)</span></div>`;
-      h += `<div class="row"><span>Remplacement électronique</span><span class="val" style="color:var(--wc-success)">0 CHF (couvert par WECHIP)</span></div>`;
-      h += `<div class="row" style="border-top:1px solid var(--wc-border-subtle);margin-top:4px;padding-top:6px">
-              <span style="font-weight:var(--wc-w-bold)">= Total Année ${REPL_YEAR}</span>
-              <span class="val" style="font-weight:var(--wc-w-bold);color:var(--wc-success)">0 CHF</span>
-            </div>`;
-      h += `<div class="note">Le remplacement électronique est à la charge de WECHIP dès lors que le partage des revenus est actif.</div>`;
-    } else {
-      h += `<div class="row"><span>OPEX annuel</span><span class="val">${fmt(p.opex)} CHF</span></div>`;
-      h += `<div class="row"><span>+ Remplacement électronique</span><span class="val">${fmt(p.replCost)} CHF</span></div>`;
-      h += `<div class="row" style="border-top:1px solid var(--wc-border-subtle);margin-top:4px;padding-top:6px">
-              <span style="font-weight:var(--wc-w-bold)">= Total Année ${REPL_YEAR}</span>
-              <span class="val" style="font-weight:var(--wc-w-bold)">${fmt(p.opex + p.replCost)} CHF</span>
-            </div>`;
-    }
-
-    if (beY < HORIZON) {
-      const postStart = beY + 1;
-      h += `<div class="section-label">Années ${postStart}–${HORIZON} — Post-breakeven</div>`;
-      h += `<div class="row"><span>Coûts totaux (OPEX + remplacement)</span><span class="val" style="color:var(--wc-success)">0 CHF / an</span></div>`;
-      h += `<div class="note">Dès que le partage 50/50 est actif, WECHIP couvre la maintenance et le remplacement électronique.</div>`;
-    } else if (beY === HORIZON) {
-      h += `<div class="note" style="margin-top:10px">Breakeven atteint à l'Année ${HORIZON} — aucune période post-breakeven dans cet horizon.</div>`;
-    } else {
-      h += `<div class="note" style="margin-top:10px">Le breakeven n'est pas atteint dans l'horizon de ${HORIZON} ans — l'OPEX s'applique sur toutes les années.</div>`;
-    }
+    h += `<div class="section-label">Remplacement électronique — Années ${REPL_YEARS.join(' et ')}</div>`;
+    REPL_YEARS.forEach(ry => {
+      const isPostRepl = ry > beY;
+      if (isPostRepl) {
+        h += `<div class="row"><span>Année ${ry} — remplacement</span><span class="val" style="color:var(--wc-success)">0 CHF (couvert par WECHIP)</span></div>`;
+      } else {
+        h += `<div class="row"><span>Année ${ry} — remplacement</span><span class="val">${fmt(p.replCost)} CHF</span></div>`;
+      }
+    });
+    h += `<div class="note">Le remplacement électronique est à la charge de WECHIP dès lors que le partage des revenus est actif.</div>`;
 
     $('costBreakdown').innerHTML = h;
   }
@@ -1217,14 +1475,18 @@
     el.addEventListener('change',render);
   });
 
-  const DEFAULTS = { modulesInput: 2, revPerColDay: 6, discountPct: 0, model: 'filaire', scenario: 'growth' };
+  // Prevent scroll wheel from changing number input values
+  document.querySelectorAll('input[type="number"]').forEach(el=>{
+    el.addEventListener('wheel', e => { e.preventDefault(); }, {passive:false});
+  });
+
+  const DEFAULTS = { modulesInput: 2, revPerColDay: 5, discountPct: 0, model: 'filaire' };
 
   $('btnReset').addEventListener('click', () => {
     $('modulesInput').value = DEFAULTS.modulesInput;
     $('revPerColDay').value = DEFAULTS.revPerColDay;
     $('discountPct').value  = DEFAULTS.discountPct;
     setModel(DEFAULTS.model);
-    setScenario(DEFAULTS.scenario);
     if (window.location.search) {
       history.replaceState(null, '', window.location.pathname);
     }
@@ -1236,7 +1498,6 @@
       mod: $('modulesInput').value,
       rev: $('revPerColDay').value,
       rabais: $('discountPct').value,
-      scenario: currentScenario,
       modele: currentModel
     });
     const url = window.location.origin + window.location.pathname + '?' + params.toString();
@@ -1299,24 +1560,6 @@
     $('rotationDetail').innerHTML = html;
   }
 
-  // The setters take an optional {silent:true} so URL hydration can update
-  // multiple pieces of state and still trigger only one render() at the end.
-  function setScenario(s, opts={}){
-    currentScenario = s;
-    const isGrowth = (s === 'growth');
-    $('btnGrowth').classList.toggle('active', isGrowth);
-    $('btnSteady').classList.toggle('active', !isGrowth);
-    $('btnGrowth').setAttribute('aria-pressed', String(isGrowth));
-    $('btnSteady').setAttribute('aria-pressed', String(!isGrowth));
-    $('scenarioDesc').textContent = isGrowth
-      ? 'Montée progressive du taux de rotation sur 5 ans'
-      : 'Taux de rotation fixe à 85 % dès la première année';
-    renderRotationDetail();
-    if (!opts.silent) render();
-  }
-  $('btnGrowth').addEventListener('click',()=>setScenario('growth'));
-  $('btnSteady').addEventListener('click',()=>setScenario('steady'));
-
   function setModel(m, opts={}){
     currentModel = m;
     const isFilaire = (m === 'filaire');
@@ -1341,8 +1584,6 @@
     if(params.has('rabais')) $('discountPct').value = params.get('rabais');
     const modele = params.get('modele');
     if (modele === 'filaire' || modele === 'solaire') setModel(modele, {silent:true});
-    const scenario = params.get('scenario');
-    if (scenario === 'steady' || scenario === 'growth') setScenario(scenario, {silent:true});
   })();
 
   renderRotationDetail();
