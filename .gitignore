@@ -3,3 +3,7 @@ __pycache__/
 .venv/
 .env
 .claude/
+
+roi_links*.db
+__pycache__/
+.pytest_cache/

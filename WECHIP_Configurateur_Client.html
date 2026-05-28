@@ -876,6 +876,8 @@
   </footer>
 </div>
 
+<script id="wechip-link-config" type="application/json">__WECHIP_LINK_CONFIG__</script>
+<script src="assets/link-config-apply.js"></script>
 <script>
 (function(){
   // ─────────────────────────────────────────────────────────────
@@ -884,7 +886,7 @@
   const DAYS         = 303;
   const NPV_RATE     = 0.05;
   const REPL_YEARS   = [6, 11];
-  const WECHIP_SHARE = 0.60;
+  const WECHIP_SHARE = ((window.WECHIP_LINK_CONFIG && Number.isFinite(window.WECHIP_LINK_CONFIG.wechipSharePct)) ? window.WECHIP_LINK_CONFIG.wechipSharePct / 100 : 0.60);
   const HORIZON      = 15;
   const START_YEAR   = new Date().getFullYear();
 
@@ -929,9 +931,14 @@
   function pricingFromModules(m){
     const extra = Math.max(0, m - 2);
     const cfg   = MODELS[currentModel] || MODELS.filaire;
-    const out   = {};
+    const ov    = (window.WECHIP_LINK_CONFIG && typeof window.WECHIP_LINK_CONFIG === 'object') ? window.WECHIP_LINK_CONFIG : {};
+    const opex  = (ov.opexAssumptions && typeof ov.opexAssumptions === 'object') ? ov.opexAssumptions : {};
+    const base       = Object.assign({}, cfg.base, opex.base || {});
+    const perModule  = Object.assign({}, cfg.perModule, opex.perModule || {});
+    if (Number.isFinite(ov.pricePerModule)) perModule.brut = ov.pricePerModule;
+    const out = {};
     for (const k of ['brut', 'install', 'opex', 'replCost']) {
-      out[k] = cfg.base[k] + extra * cfg.perModule[k];
+      out[k] = base[k] + extra * perModule[k];
     }
     return out;
   }
