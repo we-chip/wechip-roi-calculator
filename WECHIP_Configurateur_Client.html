@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="fr">
 <head>
+<base href="/">
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>WECHIP — Calculateur de rentabilité</title>
@@ -688,6 +689,7 @@
       <button id="btnShare" type="button" aria-label="Copier un lien partageable de cette configuration">Partager</button>
       <button id="btnReset" type="button" aria-label="Réinitialiser tous les paramètres aux valeurs par défaut">Réinitialiser</button>
       <button id="btnPrint" type="button" aria-label="Imprimer ou enregistrer en PDF">Imprimer / PDF</button>
+      <a id="btnAdmin" href="/admin" style="display:inline-block;margin-left:8px;padding:6px 12px;font-size:12px;color:#6b7280;text-decoration:none;border:1px solid #e5e7eb;border-radius:6px">Admin</a>
     </div>
   </header>
 
@@ -830,8 +832,8 @@
           Croissance
         </div>
         <div class="phase-card-body">
-          <div class="phase-row"><span class="phase-label">Revenus</span><span class="phase-val">100 % client</span></div>
-          <div class="phase-row"><span class="phase-label">OPEX</span><span class="phase-val">À charge du client</span></div>
+          <div class="phase-row"><span class="phase-label">Revenus</span><span class="phase-val" id="phaseRev1">100 % client</span></div>
+          <div class="phase-row"><span class="phase-label">OPEX</span><span class="phase-val" id="phaseOpex1">À charge du client</span></div>
           <div class="phase-row"><span class="phase-label">Durée</span><span class="phase-val phase-val--dynamic" id="phaseDuration1">—</span></div>
         </div>
       </div>
@@ -844,8 +846,8 @@
           Partage
         </div>
         <div class="phase-card-body">
-          <div class="phase-row"><span class="phase-label">Revenus</span><span class="phase-val">60 % WECHIP</span></div>
-          <div class="phase-row"><span class="phase-label">OPEX</span><span class="phase-val">Couverts par WECHIP</span></div>
+          <div class="phase-row"><span class="phase-label">Revenus</span><span class="phase-val" id="phaseShareLabel">60 % WECHIP</span></div>
+          <div class="phase-row"><span class="phase-label">OPEX</span><span class="phase-val" id="phaseOpex2">Couverts par WECHIP</span></div>
           <div class="phase-row"><span class="phase-label">Durée</span><span class="phase-val phase-val--dynamic" id="phaseDuration2">—</span></div>
         </div>
       </div>
@@ -878,6 +880,7 @@
 
 <script id="wechip-link-config" type="application/json">__WECHIP_LINK_CONFIG__</script>
 <script src="assets/link-config-apply.js"></script>
+<script src="assets/admin-panel.js"></script>
 <script>
 (function(){
   // ─────────────────────────────────────────────────────────────
@@ -886,7 +889,11 @@
   const DAYS         = 303;
   const NPV_RATE     = 0.05;
   const REPL_YEARS   = [6, 11];
-  const WECHIP_SHARE = ((window.WECHIP_LINK_CONFIG && Number.isFinite(window.WECHIP_LINK_CONFIG.wechipSharePct)) ? window.WECHIP_LINK_CONFIG.wechipSharePct / 100 : 0.60);
+  // Read live each compute so admin overrides to wechipSharePct propagate without reload.
+  function getWechipShare() {
+    var ov = window.WECHIP_LINK_CONFIG;
+    return (ov && Number.isFinite(ov.wechipSharePct)) ? ov.wechipSharePct / 100 : 0.60;
+  }
   const HORIZON      = 15;
   const START_YEAR   = new Date().getFullYear();
 
@@ -935,6 +942,7 @@
     const opex  = (ov.opexAssumptions && typeof ov.opexAssumptions === 'object') ? ov.opexAssumptions : {};
     const base       = Object.assign({}, cfg.base, opex.base || {});
     const perModule  = Object.assign({}, cfg.perModule, opex.perModule || {});
+    if (Number.isFinite(ov.priceBase)) base.brut = ov.priceBase;
     if (Number.isFinite(ov.pricePerModule)) perModule.brut = ov.pricePerModule;
     const out = {};
     for (const k of ['brut', 'install', 'opex', 'replCost']) {
@@ -986,7 +994,14 @@
     const dPct         = clampInput('discountPct',  0, 80, 0) / 100;
 
     const pr        = pricingFromModules(modules);
-    const brutTotal = pr.brut + pr.install + pr.opex;
+    // If admin sets opexByWechip, customer never pays OPEX nor replacement —
+    // zero them at source so all downstream calcs (invest, rabais, BE, chart) align.
+    const ovTop     = (window.WECHIP_LINK_CONFIG && typeof window.WECHIP_LINK_CONFIG === 'object') ? window.WECHIP_LINK_CONFIG : {};
+    const opexByWechip = ovTop.opexByWechip === true;
+    const sharingFromStart = ovTop.sharingFromStart === true;
+    const opexCust     = opexByWechip ? 0 : pr.opex;
+    const replCustom   = opexByWechip ? 0 : pr.replCost;
+    const brutTotal = pr.brut + pr.install + opexCust;
     // Round once here so KPIs, compute(), and the cost breakdown all agree to
     // the franc — avoids sub-CHF drift between displayed and computed values.
     const netTotal  = Math.round(Math.max(0, brutTotal * (1 - dPct)));
@@ -1000,15 +1015,19 @@
       cols, revPerColDay, modules,
       priceBrut: pr.brut, installBrut: pr.install,
       machineNet, installNet, opexNet, investTotal: netTotal,
-      opex: pr.opex, opexBrut: pr.opex, replCost: pr.replCost
+      opex: opexCust, opexBrut: opexCust, replCost: replCustom,
+      sharingFromStart, opexByWechip
     };
   }
 
   function compute(p){
     const baseRot = getRotation();
+    const share0  = getWechipShare();
     let hCum = 0, beNominal = -1;
     for (let y = 1; y <= HORIZON; y++) {
-      const rev  = p.cols * p.revPerColDay * baseRot[y] * DAYS;
+      const revGross = p.cols * p.revPerColDay * baseRot[y] * DAYS;
+      // For BE computation, mirror the sharing rule chosen by admin.
+      const rev  = revGross * (p.sharingFromStart ? (1 - share0) : 1);
       // Year 1 OPEX is included in investTotal (discounted), so skip it
       const cost = (y === 1 ? p.investTotal : 0) + (y === 1 ? 0 : p.opex) + (REPL_YEARS.includes(y) ? p.replCost : 0);
       hCum += rev - cost;
@@ -1017,16 +1036,20 @@
     const years = [];
     let cum = 0, cumNPV = 0, beActualise = -1;
     for (let y = 1; y <= HORIZON; y++) {
-      const post     = beNominal > 0 && y > beNominal;
+      const postBE   = beNominal > 0 && y > beNominal;
+      // Sharing flag: independent of BE if admin enabled sharingFromStart.
+      const post     = p.sharingFromStart || postBE;
+      // WECHIP covers OPEX either when admin set it, or post-BE under the 2-phase model.
+      // If sharingFromStart, there's no 2-phase flip — OPEX coverage relies solely on opexByWechip.
+      const wechipPaysOpex = p.opexByWechip || (!p.sharingFromStart && postBE);
       // Rendement follows the published ramp regardless of breakeven status.
-      // The 60% WECHIP share split is independent and only kicks in post-breakeven.
       const effectiveRot = baseRot[y];
       const revGross = p.cols * p.revPerColDay * effectiveRot * DAYS;
-      const share    = post ? revGross * WECHIP_SHARE : 0;
+      const share    = post ? revGross * share0 : 0;
       const revNet   = revGross - share;
       const capex    = y === 1 ? p.investTotal : 0;
       // Year 1 OPEX already in capex (investTotal); subsequent years charge opex normally
-      const opex     = (y === 1 ? 0 : (post ? 0 : p.opex)) + (REPL_YEARS.includes(y) && !post ? p.replCost : 0);
+      const opex     = (y === 1 ? 0 : (wechipPaysOpex ? 0 : p.opex)) + (REPL_YEARS.includes(y) && !wechipPaysOpex ? p.replCost : 0);
       const cost     = capex + opex;
       const flow = revNet - cost;
       cum    += flow;

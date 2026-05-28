@@ -21,7 +21,7 @@
 <body>
 <h1>Trackable links</h1>
 <p>
-  <a class="btn btn-primary" href="{{ url_for('admin_new') }}">+ New link</a>
+  <a class="btn btn-primary" href="{{ url_for('admin_calculator') }}">+ New link (open calculator)</a>
 </p>
 <table>
   <thead>
@@ -37,7 +37,7 @@
       <td>{{ l.last_view or '—' }}</td>
       <td>{% if l.revoked_at %}<span class="pill">revoked</span>{% else %}active{% endif %}</td>
       <td>
-        <a href="{{ url_for('admin_edit', slug=l.slug) }}">edit</a> ·
+        <a href="{{ url_for('admin_calculator', slug=l.slug) }}">edit</a> ·
         <a href="{{ url_for('admin_stats', slug=l.slug) }}">stats</a>
         {% if not l.revoked_at %}
         ·

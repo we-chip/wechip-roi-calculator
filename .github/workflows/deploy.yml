@@ -30,7 +30,10 @@ jobs:
           set -euo pipefail
           mkdir -p build
           rsync -a --exclude '__pycache__' --exclude '*.pyc' \
-                --exclude '.git' --exclude '.github' . build/
+                --exclude '.git' --exclude '.github' \
+                --exclude '*.db' --exclude '.venv' --exclude 'tests' \
+                --exclude '.pytest_cache' --exclude 'docs' \
+                --exclude '.vscode' --exclude 'cowork' --exclude 'shared' . build/
           pip install -r requirements.txt \
               --target=build/.python_packages/lib/site-packages
           echo "${{ github.sha }}" > build/build_commit.txt

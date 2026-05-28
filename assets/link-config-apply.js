@@ -9,6 +9,29 @@
   try { cfg = JSON.parse((cfgEl && cfgEl.textContent) || '{}') || {}; } catch (e) { cfg = {}; }
   window.WECHIP_LINK_CONFIG = cfg;
 
+  // Phase-card labels reflect who pays OPEX in the growth phase.
+  function updatePhaseLabels() {
+    var c = window.WECHIP_LINK_CONFIG || {};
+    var fromStart = c.sharingFromStart === true;
+    var p1 = document.getElementById('phaseOpex1');
+    if (p1) p1.textContent = (c.opexByWechip === true || fromStart) ? 'Couverts par WECHIP' : 'À charge du client';
+    var share = Number.isFinite(c.wechipSharePct) ? c.wechipSharePct : 60;
+    var sl = document.getElementById('phaseShareLabel');
+    if (sl) sl.textContent = String(share) + ' % WECHIP';
+    var rev1 = document.getElementById('phaseRev1');
+    if (rev1) rev1.textContent = fromStart ? (String(share) + ' % WECHIP') : '100 % client';
+  }
+  window.__wechipUpdatePhaseLabels = updatePhaseLabels;
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', updatePhaseLabels);
+  } else {
+    updatePhaseLabels();
+  }
+
+  // In admin mode, the admin-panel.js owns all UI changes; this file stays out of the way
+  // so the calculator behaves like a blank canvas the admin can tweak freely.
+  if (cfg.__admin) return;
+
   var hasConfig = cfg && (cfg.display_name || Object.keys(cfg).some(function (k) { return k !== 'display_name'; }));
   if (!hasConfig) return;
 

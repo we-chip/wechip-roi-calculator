@@ -41,9 +41,12 @@ HTML_PLACEHOLDER = "__WECHIP_LINK_CONFIG__"
 
 CONFIG_KEYS = (
     "pricePerModule",
+    "priceBase",
     "revPerColDay",
     "wechipSharePct",
     "opexAssumptions",
+    "opexByWechip",
+    "sharingFromStart",
     "discountPct",
     "columns",
 )
@@ -54,10 +57,20 @@ def _load_html(base: str) -> str:
         return f.read()
 
 
-def _render_calculator(html: str, link_config: dict[str, Any], display_name: str = "") -> str:
+def _render_calculator(
+    html: str,
+    link_config: dict[str, Any],
+    display_name: str = "",
+    admin_mode: bool = False,
+    admin_slug: str | None = None,
+) -> str:
     payload = dict(link_config or {})
     if display_name:
         payload["display_name"] = display_name
+    if admin_mode:
+        payload["__admin"] = True
+        if admin_slug:
+            payload["__editing_slug"] = admin_slug
     safe = json.dumps(payload).replace("</", "<\\/")
     return html.replace(HTML_PLACEHOLDER, safe, 1)
 
@@ -126,50 +139,40 @@ def _csrf_ok() -> bool:
     return bool(expected) and hmac.compare_digest(sent, expected)
 
 
-def _parse_config_from_form(form) -> tuple[dict[str, Any], list[str]]:
+def _validate_config(cfg: dict[str, Any]) -> list[str]:
+    """Validate a JSON config dict from the admin UI. Returns error list."""
     errors: list[str] = []
-    cfg: dict[str, Any] = {}
 
-    def _num(name: str, lo: float | None = None, hi: float | None = None) -> float | None:
-        raw = (form.get(name) or "").strip()
-        if not raw:
-            return None
-        try:
-            v = float(raw)
-        except ValueError:
-            errors.append(f"{name}: not a number")
-            return None
+    def _check_num(key: str, lo: float | None = None, hi: float | None = None) -> None:
+        if key not in cfg:
+            return
+        v = cfg[key]
+        if not isinstance(v, (int, float)) or isinstance(v, bool):
+            errors.append(f"{key}: not a number")
+            return
         if lo is not None and v < lo:
-            errors.append(f"{name}: must be >= {lo}")
-            return None
+            errors.append(f"{key}: must be >= {lo}")
         if hi is not None and v > hi:
-            errors.append(f"{name}: must be <= {hi}")
-            return None
-        return v
+            errors.append(f"{key}: must be <= {hi}")
 
-    v = _num("pricePerModule", lo=0)
-    if v is not None: cfg["pricePerModule"] = v
-    v = _num("revPerColDay", lo=0)
-    if v is not None: cfg["revPerColDay"] = v
-    v = _num("wechipSharePct", lo=0, hi=100)
-    if v is not None: cfg["wechipSharePct"] = v
-    v = _num("discountPct", lo=0, hi=95)
-    if v is not None: cfg["discountPct"] = v
-    v = _num("columns", lo=4, hi=16)
-    if v is not None: cfg["columns"] = int(v)
-
-    raw_opex = (form.get("opexAssumptionsJson") or "").strip()
-    if raw_opex:
-        try:
-            parsed = json.loads(raw_opex)
-            if not isinstance(parsed, dict):
-                errors.append("opexAssumptions: must be a JSON object")
-            else:
-                cfg["opexAssumptions"] = parsed
-        except json.JSONDecodeError as e:
-            errors.append(f"opexAssumptions: invalid JSON ({e})")
-
-    return cfg, errors
+    _check_num("pricePerModule", lo=0)
+    _check_num("priceBase", lo=0)
+    _check_num("revPerColDay", lo=0)
+    _check_num("wechipSharePct", lo=0, hi=100)
+    _check_num("discountPct", lo=0, hi=95)
+    _check_num("columns", lo=4, hi=16)
+    if "opexAssumptions" in cfg and not isinstance(cfg["opexAssumptions"], dict):
+        errors.append("opexAssumptions: must be an object")
+    if "opexByWechip" in cfg and not isinstance(cfg["opexByWechip"], bool):
+        errors.append("opexByWechip: must be a boolean")
+    if "sharingFromStart" in cfg and not isinstance(cfg["sharingFromStart"], bool):
+        errors.append("sharingFromStart: must be a boolean")
+    # Reject unknown keys to keep storage tidy.
+    allowed = set(CONFIG_KEYS)
+    for k in cfg.keys():
+        if k not in allowed:
+            errors.append(f"unknown key: {k}")
+    return errors
 
 
 def create_app(db_path: str | None = None) -> Flask:
@@ -245,53 +248,71 @@ def create_app(db_path: str | None = None) -> Flask:
     def admin_list():
         return render_template("admin_list.html", links=link_db.list_links(dbp()))
 
-    @app.route("/admin/links/new", methods=["GET", "POST"])
+    @app.route("/admin")
+    @app.route("/admin/")
     @basic_auth_required
-    def admin_new():
-        if request.method == "POST":
-            if not _csrf_ok():
-                return Response("CSRF failed", status=400)
-            slug = (request.form.get("slug") or "").strip().lower()
-            display_name = (request.form.get("display_name") or "").strip()
-            errors: list[str] = []
-            if not SLUG_RE.match(slug):
-                errors.append("slug: invalid (use a-z, 0-9, hyphen; 2-60 chars; start alphanum)")
-            cfg, cfg_errors = _parse_config_from_form(request.form)
-            errors.extend(cfg_errors)
-            if not errors:
-                try:
-                    link_db.create_link(slug, display_name, cfg, dbp())
-                    return redirect(url_for("admin_list"))
-                except sqlite3.IntegrityError:
-                    errors.append("slug: already exists")
-            return render_template("admin_form.html", mode="new", link=None,
-                                   form=request.form, errors=errors)
-        return render_template("admin_form.html", mode="new", link=None, form={}, errors=[])
+    def admin_calculator() -> Response:
+        slug = request.args.get("slug", "").strip().lower()
+        cfg: dict[str, Any] = {}
+        display_name = ""
+        editing_slug: str | None = None
+        if slug and SLUG_RE.match(slug):
+            link = link_db.get_link(slug, dbp())
+            if link:
+                cfg = link.get("config", {})
+                display_name = link.get("display_name", "")
+                editing_slug = slug
+        body = _render_calculator(
+            html(), cfg, display_name=display_name,
+            admin_mode=True, admin_slug=editing_slug,
+        )
+        return Response(body, mimetype="text/html")
 
-    @app.route("/admin/links/<slug>", methods=["GET", "POST"])
+    @app.route("/admin/api/links", methods=["POST"])
     @basic_auth_required
-    def admin_edit(slug: str):
-        link = link_db.get_link(slug, dbp())
-        if not link:
+    def admin_api_create():
+        data = request.get_json(silent=True) or {}
+        slug = (data.get("slug") or "").strip().lower()
+        display_name = (data.get("display_name") or "").strip()
+        config = data.get("config") or {}
+        if not isinstance(config, dict):
+            return {"ok": False, "errors": ["config: must be object"]}, 400
+        if not SLUG_RE.match(slug):
+            return {"ok": False, "errors": ["slug: invalid"]}, 400
+        errors = _validate_config(config)
+        if errors:
+            return {"ok": False, "errors": errors}, 400
+        try:
+            link_db.create_link(slug, display_name, config, dbp())
+        except sqlite3.IntegrityError:
+            return {"ok": False, "errors": ["slug: already exists"]}, 409
+        return {"ok": True, "slug": slug, "url": url_for("customer_link", slug=slug, _external=True)}
+
+    @app.route("/admin/api/links/<slug>", methods=["PUT"])
+    @basic_auth_required
+    def admin_api_update(slug: str):
+        if not SLUG_RE.match(slug):
             abort(404)
-        if request.method == "POST":
-            if not _csrf_ok():
-                return Response("CSRF failed", status=400)
-            display_name = (request.form.get("display_name") or "").strip()
-            cfg, errors = _parse_config_from_form(request.form)
-            if errors:
-                return render_template("admin_form.html", mode="edit", link=link,
-                                       form=request.form, errors=errors)
-            link_db.update_link(slug, display_name, cfg, dbp())
-            return redirect(url_for("admin_list"))
-        form_prefill = {
-            "display_name": link.get("display_name", ""),
-            **{k: link["config"].get(k, "") for k in CONFIG_KEYS if k != "opexAssumptions"},
-            "opexAssumptionsJson": json.dumps(link["config"].get("opexAssumptions"))
-                if link["config"].get("opexAssumptions") else "",
-        }
-        return render_template("admin_form.html", mode="edit", link=link,
-                               form=form_prefill, errors=[])
+        if not link_db.get_link(slug, dbp()):
+            abort(404)
+        data = request.get_json(silent=True) or {}
+        display_name = (data.get("display_name") or "").strip()
+        config = data.get("config") or {}
+        if not isinstance(config, dict):
+            return {"ok": False, "errors": ["config: must be object"]}, 400
+        errors = _validate_config(config)
+        if errors:
+            return {"ok": False, "errors": errors}, 400
+        link_db.update_link(slug, display_name, config, dbp())
+        return {"ok": True, "slug": slug}
+
+    @app.route("/admin/api/links/<slug>/revoke", methods=["POST"])
+    @basic_auth_required
+    def admin_api_revoke(slug: str):
+        if not SLUG_RE.match(slug):
+            abort(404)
+        link_db.revoke_link(slug, dbp())
+        return {"ok": True}
 
     @app.route("/admin/links/<slug>/revoke", methods=["POST"])
     @basic_auth_required
