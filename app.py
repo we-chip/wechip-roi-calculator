@@ -99,10 +99,11 @@ def _check_basic_auth() -> bool:
     auth = request.authorization
     if not auth or auth.type != "basic":
         return False
-    return (
-        hmac.compare_digest((auth.username or ""), user or "")
-        and hmac.compare_digest((auth.password or ""), pwd or "")
-    )
+    # Compare as bytes — compare_digest raises TypeError on non-ASCII str,
+    # and browsers may submit credentials containing arbitrary bytes.
+    def _eq(a: str | None, b: str | None) -> bool:
+        return hmac.compare_digest((a or "").encode("utf-8"), (b or "").encode("utf-8"))
+    return _eq(auth.username, user) and _eq(auth.password, pwd)
 
 
 def _unauthorized() -> Response:
@@ -136,7 +137,9 @@ def _csrf_token() -> str:
 def _csrf_ok() -> bool:
     sent = request.form.get("_csrf", "")
     expected = session.get("_csrf", "")
-    return bool(expected) and hmac.compare_digest(sent, expected)
+    return bool(expected) and hmac.compare_digest(
+        sent.encode("utf-8"), expected.encode("utf-8")
+    )
 
 
 def _validate_config(cfg: dict[str, Any]) -> list[str]:
