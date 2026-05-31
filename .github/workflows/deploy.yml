@@ -114,11 +114,18 @@ jobs:
       - name: Health check
         run: |
           set -euo pipefail
-          URL="https://wechip-roi-calculator.azurewebsites.net/"
+          URL="https://wechip-roi-calculator.azurewebsites.net/api/health"
           deadline=$(( $(date +%s) + 300 ))
           while [ "$(date +%s)" -lt "${deadline}" ]; do
             code=$(curl -s -o /dev/null -w "%{http_code}" "${URL}" || true)
-            if [ "${code}" = "200" ]; then echo "OK ${code}"; exit 0; fi
+            if [ "${code}" = "200" ]; then
+              body=$(curl -s "${URL}")
+              compact=$(printf '%s' "${body}" | tr -d ' \t\n\r')
+              echo "OK ${code} body=${compact}"
+              printf '%s' "${compact}" | grep -q '"status":"ok"' \
+                || { echo "::error::Health body missing marker (\"status\":\"ok\")"; exit 1; }
+              exit 0
+            fi
             echo "Got ${code}, retrying..."; sleep 5
           done
           echo "::error::Health check timed out after 300s"; exit 1

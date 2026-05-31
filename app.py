@@ -51,6 +51,14 @@ CONFIG_KEYS = (
     "columns",
 )
 
+ALLOWED_MODELS = ("auto", "filaire", "solaire")
+
+
+def _coerce_model(value: Any) -> str:
+    if isinstance(value, str) and value in ALLOWED_MODELS:
+        return value
+    return "auto"
+
 
 def _load_html(base: str) -> str:
     with open(os.path.join(base, "WECHIP_Configurateur_Client.html"), encoding="utf-8") as f:
@@ -199,6 +207,13 @@ def create_app(db_path: str | None = None) -> Flask:
     def index() -> Response:
         return Response(_render_calculator(html(), {}), mimetype="text/html")
 
+    @app.route("/api/health")
+    def health() -> Response:
+        return Response(
+            json.dumps({"status": "ok"}, separators=(",", ":")),
+            mimetype="application/json",
+        )
+
     @app.route("/c/<slug>")
     def customer_link(slug: str) -> Response:
         if not SLUG_RE.match(slug):
@@ -210,7 +225,11 @@ def create_app(db_path: str | None = None) -> Flask:
             link_db.log_event(slug, "view", {"ip": request.remote_addr or ""}, dbp())
         except sqlite3.Error:
             pass
-        body = _render_calculator(html(), link["config"], display_name=link.get("display_name", ""))
+        cfg = dict(link["config"])
+        model = _coerce_model(link.get("model"))
+        if model != "auto":
+            cfg["model"] = model
+        body = _render_calculator(html(), cfg, display_name=link.get("display_name", ""))
         return Response(body, mimetype="text/html")
 
     @app.route("/c/<slug>/event", methods=["POST"])
@@ -262,9 +281,10 @@ def create_app(db_path: str | None = None) -> Flask:
         if slug and SLUG_RE.match(slug):
             link = link_db.get_link(slug, dbp())
             if link:
-                cfg = link.get("config", {})
+                cfg = dict(link.get("config", {}))
                 display_name = link.get("display_name", "")
                 editing_slug = slug
+                cfg["model"] = _coerce_model(link.get("model"))
         body = _render_calculator(
             html(), cfg, display_name=display_name,
             admin_mode=True, admin_slug=editing_slug,
@@ -285,8 +305,9 @@ def create_app(db_path: str | None = None) -> Flask:
         errors = _validate_config(config)
         if errors:
             return {"ok": False, "errors": errors}, 400
+        model = _coerce_model(data.get("model"))
         try:
-            link_db.create_link(slug, display_name, config, dbp())
+            link_db.create_link(slug, display_name, config, dbp(), model=model)
         except sqlite3.IntegrityError:
             return {"ok": False, "errors": ["slug: already exists"]}, 409
         return {"ok": True, "slug": slug, "url": url_for("customer_link", slug=slug, _external=True)}
@@ -306,7 +327,8 @@ def create_app(db_path: str | None = None) -> Flask:
         errors = _validate_config(config)
         if errors:
             return {"ok": False, "errors": errors}, 400
-        link_db.update_link(slug, display_name, config, dbp())
+        model = _coerce_model(data.get("model"))
+        link_db.update_link(slug, display_name, config, dbp(), model=model)
         return {"ok": True, "slug": slug}
 
     @app.route("/admin/api/links/<slug>/revoke", methods=["POST"])
