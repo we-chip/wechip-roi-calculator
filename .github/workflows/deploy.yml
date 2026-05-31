@@ -14,14 +14,149 @@ permissions:
   contents: read
   issues: write
 
+# NOTE: this repo is PUBLIC, so it cannot `uses:` the private WECHIP-OS reusable
+# workflow ("workflow was not found"). The canonical pipeline is inlined here.
+# Keep in sync with we-chip/WECHIP-OS/.github/workflows/azure-app-deploy.yml.
+
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dev deps and run tests
+        run: |
+          set -euo pipefail
+          pip install -r requirements-dev.txt
+          pytest tests/ -x -q
+
+      - name: Build artifact
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          rsync -a \
+            --exclude '__pycache__' --exclude '*.pyc' \
+            --exclude '.git' --exclude '.github' \
+            --exclude 'tests' --exclude 'cowork' --exclude 'shared' \
+            --exclude '.venv' --exclude 'venv' --exclude '.pytest_cache' \
+            --exclude '*.md' --exclude 'docs' \
+            --exclude '.env' --exclude '.env.*' \
+            --exclude 'deploy.zip' --exclude 'app.zip' \
+            --exclude '*.db' --exclude '*.db-*' --exclude '*.db.*' \
+            --exclude '*.sqlite' --exclude '*.sqlite3' \
+            . build/
+          echo "${{ github.sha }}" > build/build_commit.txt
+          cd build && zip -rq ../app.zip . && cd ..
+          ls -la app.zip
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: app-build
+          path: app.zip
+          overwrite: true
+
   deploy:
-    # WECHIP-OS is internal -> this public repo can consume the reusable.
-    uses: we-chip/WECHIP-OS/.github/workflows/azure-app-deploy.yml@main
-    with:
-      app_name: wechip-roi-calculator
-      # No /api/health route: check the homepage returns 200 (no body marker).
-      health_url: https://wechip-roi-calculator.azurewebsites.net/
-      health_body_grep: ''
-      verify_build_commit: false
-    secrets: inherit
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          name: app-build
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Ensure Oryx builds runtime deps
+        run: |
+          az webapp config appsettings set \
+            --name wechip-roi-calculator \
+            --resource-group wechip-rg \
+            --settings SCM_DO_BUILD_DURING_DEPLOYMENT=true \
+            -o none
+
+      - name: Fire-and-forget zip push to Kudu
+        run: |
+          set -euo pipefail
+          APP="wechip-roi-calculator"
+          TOKEN=$(az account get-access-token \
+            --resource https://management.core.windows.net/ \
+            --query accessToken -o tsv)
+          URL="https://${APP}.scm.azurewebsites.net/api/zipdeploy?isAsync=true"
+          echo "Pushing app.zip → ${URL}"
+          HTTP=$(curl -sS -o /tmp/zipdeploy.out -w "%{http_code}" \
+            -X POST \
+            -H "Authorization: Bearer ${TOKEN}" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary @app.zip \
+            --max-time 180 \
+            "${URL}") || { echo "::error::curl failed (HTTP=${HTTP})"; cat /tmp/zipdeploy.out; exit 1; }
+          echo "Kudu zipdeploy HTTP=${HTTP}"
+          cat /tmp/zipdeploy.out || true
+          case "${HTTP}" in
+            200|202) echo "Kudu accepted the zip. Server build starts now." ;;
+            409) echo "::warning::Kudu reports a deployment already in progress; smoke-test will verify final state." ;;
+            *) echo "::error::Kudu zipdeploy rejected (HTTP=${HTTP})"; exit 1 ;;
+          esac
+
+  smoke-test:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Health check
+        run: |
+          set -euo pipefail
+          URL="https://wechip-roi-calculator.azurewebsites.net/"
+          deadline=$(( $(date +%s) + 300 ))
+          while [ "$(date +%s)" -lt "${deadline}" ]; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "${URL}" || true)
+            if [ "${code}" = "200" ]; then echo "OK ${code}"; exit 0; fi
+            echo "Got ${code}, retrying..."; sleep 5
+          done
+          echo "::error::Health check timed out after 300s"; exit 1
+
+  on-failure:
+    name: open-deploy-doctor-issue
+    needs: [build, deploy, smoke-test]
+    if: ${{ failure() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Open issue for Deploy Doctor
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          SHORT="${GITHUB_SHA:0:7}"
+          TITLE="Deploy failed: wechip-roi-calculator @ ${SHORT}"
+          BODY=$(cat <<EOF
+          Automatic Deploy Doctor handoff.
+
+          - **Repo**: \`${GITHUB_REPOSITORY}\`
+          - **App**: \`wechip-roi-calculator\` (\`wechip-rg\`)
+          - **Commit**: \`${GITHUB_SHA}\`
+          - **Run**: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
+          - **Health URL**: https://wechip-roi-calculator.azurewebsites.net/
+
+          ## What to do
+          1. Open Copilot / Claude in chat with the **Deploy Doctor** chatmode.
+          2. Paste the run URL above.
+          3. Deploy Doctor will triage, fix, and reply on this issue.
+          EOF
+          )
+          EXISTING=$(gh issue list --repo "${GITHUB_REPOSITORY}" --state open \
+            --search "${TITLE} in:title" --json number --jq '.[0].number' || true)
+          if [ -n "${EXISTING}" ]; then
+            gh issue comment "${EXISTING}" --repo "${GITHUB_REPOSITORY}" --body "${BODY}"
+          else
+            gh issue create --repo "${GITHUB_REPOSITORY}" \
+              --title "${TITLE}" --body "${BODY}" --label "deploy-doctor" 2>/tmp/gh.err || \
+              gh issue create --repo "${GITHUB_REPOSITORY}" --title "${TITLE}" --body "${BODY}"
+          fi
