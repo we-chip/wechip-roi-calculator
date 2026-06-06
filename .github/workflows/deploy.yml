@@ -111,24 +111,33 @@ jobs:
     needs: deploy
     runs-on: ubuntu-latest
     steps:
-      - name: Health check
+      - name: Health check + deployed-commit verification
         run: |
           set -euo pipefail
           URL="https://wechip-roi-calculator.azurewebsites.net/api/health"
-          deadline=$(( $(date +%s) + 300 ))
+          EXPECTED="${GITHUB_SHA}"
+          deadline=$(( $(date +%s) + 360 ))
           while [ "$(date +%s)" -lt "${deadline}" ]; do
             code=$(curl -s -o /dev/null -w "%{http_code}" "${URL}" || true)
             if [ "${code}" = "200" ]; then
               body=$(curl -s "${URL}")
               compact=$(printf '%s' "${body}" | tr -d ' \t\n\r')
-              echo "OK ${code} body=${compact}"
               printf '%s' "${compact}" | grep -q '"status":"ok"' \
                 || { echo "::error::Health body missing marker (\"status\":\"ok\")"; exit 1; }
-              exit 0
+              deployed=$(printf '%s' "${body}" | python3 -c "import sys,json;print(json.load(sys.stdin).get('build_commit',''))" 2>/dev/null || true)
+              if [ -z "${deployed}" ]; then
+                echo "Health OK but build_commit empty (old code still live), retrying..."; sleep 8; continue
+              fi
+              if [ "${deployed}" = "${EXPECTED}" ]; then
+                echo "OK ${code} deployed_commit=${deployed} matches github.sha"; exit 0
+              fi
+              echo "Stale deploy: live=${deployed} expected=${EXPECTED} (server build not yet active), retrying..."
+              sleep 8; continue
             fi
             echo "Got ${code}, retrying..."; sleep 5
           done
-          echo "::error::Health check timed out after 300s"; exit 1
+          echo "::error::Smoke test timed out: health never reported the expected build_commit (${EXPECTED}). Likely a stuck server-side build."; exit 1
+
 
   on-failure:
     name: open-deploy-doctor-issue

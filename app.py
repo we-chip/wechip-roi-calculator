@@ -55,6 +55,19 @@ CONFIG_KEYS = (
 ALLOWED_MODELS = ("auto", "filaire", "solaire")
 
 
+def _build_commit() -> str:
+    """Deployed git SHA (from build_commit.txt written at CI build time).
+
+    Exposed on /api/health so the deploy smoke-test can verify the new code is
+    actually live, catching stale/stuck server-side builds. Empty if unknown.
+    """
+    try:
+        with open(os.path.join(BASE, "build_commit.txt"), encoding="utf-8") as f:
+            return f.read().strip()
+    except OSError:
+        return ""
+
+
 def _coerce_model(value: Any) -> str:
     if isinstance(value, str) and value in ALLOWED_MODELS:
         return value
@@ -257,7 +270,7 @@ def create_app(db_path: str | None = None) -> Flask:
     @app.route("/api/health")
     def health() -> Response:
         return Response(
-            json.dumps({"status": "ok"}, separators=(",", ":")),
+            json.dumps({"status": "ok", "build_commit": _build_commit()}, separators=(",", ":")),
             mimetype="application/json",
         )
 
