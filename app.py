@@ -315,7 +315,11 @@ def create_app(db_path: str | None = None) -> Flask:
     @app.route("/admin/links")
     @basic_auth_required
     def admin_list():
-        return render_template("admin_list.html", links=link_db.list_links(dbp()))
+        return render_template(
+            "admin_list.html",
+            links=link_db.list_links(dbp()),
+            sso_user=_sso_user(),
+        )
 
     @app.route("/admin")
     @app.route("/admin/")
