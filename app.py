@@ -11,6 +11,7 @@ import time
 from collections import defaultdict, deque
 from functools import wraps
 from typing import Any
+from urllib.parse import quote
 
 from flask import (
     Flask,
@@ -122,15 +123,61 @@ def _unauthorized() -> Response:
     )
 
 
+def _sso_mode() -> bool:
+    """True when admin routes should use Entra SSO (set on Azure once Easy Auth is on)."""
+    return os.environ.get("ADMIN_SSO", "").strip().lower() in ("1", "true", "on", "yes")
+
+
+def _sso_user() -> str | None:
+    """Email/UPN of the Easy Auth-authenticated user, or None if anonymous.
+
+    App Service Easy Auth strips any client-supplied ``X-MS-CLIENT-PRINCIPAL*``
+    headers and injects its own, so this header is trustworthy when Easy Auth
+    fronts the app.
+    """
+    return request.headers.get("X-MS-CLIENT-PRINCIPAL-NAME") or None
+
+
+def _sso_user_allowed(email: str) -> bool:
+    """If ``ADMIN_EMAILS`` is set, the SSO user's email must be listed; otherwise any
+    authenticated tenant member is allowed (the app registration is single-tenant)."""
+    allow = os.environ.get("ADMIN_EMAILS", "").strip()
+    if not allow:
+        return True
+    return email.lower() in {e.strip().lower() for e in allow.split(",") if e.strip()}
+
+
+def _sso_login_redirect() -> Response:
+    """Send the browser to the Microsoft sign-in, returning to the current page after."""
+    dest = request.full_path if request.query_string else request.path
+    return redirect(f"/.auth/login/aad?post_login_redirect_uri={quote(dest, safe='')}")
+
+
 def basic_auth_required(view):
+    """Gate admin routes.
+
+    Precedence:
+      1. Entra SSO via Easy Auth principal (production). Authorized by ``ADMIN_EMAILS``,
+         or any tenant member if unset. When ``ADMIN_SSO`` is on, anonymous browsers are
+         redirected to the Microsoft sign-in.
+      2. HTTP Basic auth (``BASIC_AUTH_USER``/``BASIC_AUTH_PASS``) — local-dev / machine
+         / API fallback. Keeps existing behavior when SSO is not configured.
+    """
     @wraps(view)
     def wrapper(*args, **kwargs):
+        sso = _sso_user()
+        if sso:
+            if _sso_user_allowed(sso):
+                return view(*args, **kwargs)
+            return Response(f"{sso} is not authorized for admin.", status=403)
         user, pwd = _auth_credentials()
+        if user and pwd and _check_basic_auth():
+            return view(*args, **kwargs)
+        if _sso_mode():
+            return _sso_login_redirect()
         if not user or not pwd:
             return Response("Admin disabled: BASIC_AUTH_USER/BASIC_AUTH_PASS not set", status=503)
-        if not _check_basic_auth():
-            return _unauthorized()
-        return view(*args, **kwargs)
+        return _unauthorized()
     return wrapper
 
 
