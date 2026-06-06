@@ -85,6 +85,7 @@ def _render_calculator(
     display_name: str = "",
     admin_mode: bool = False,
     admin_slug: str | None = None,
+    sso_user: str | None = None,
 ) -> str:
     payload = dict(link_config or {})
     if display_name:
@@ -94,7 +95,20 @@ def _render_calculator(
         if admin_slug:
             payload["__editing_slug"] = admin_slug
     safe = json.dumps(payload).replace("</", "<\\/")
-    return html.replace(HTML_PLACEHOLDER, safe, 1)
+    out = html.replace(HTML_PLACEHOLDER, safe, 1)
+    if admin_mode and sso_user:
+        from html import escape as _esc
+        banner = (
+            '<div style="position:fixed;top:0;right:0;z-index:9999;display:flex;'
+            'align-items:center;gap:10px;background:#111;color:#fff;font:13px/1.4 '
+            "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:6px 12px;"
+            'border-bottom-left-radius:8px">'
+            f'<span>Signed in as <strong>{_esc(sso_user)}</strong></span>'
+            '<a href="/.auth/logout?post_logout_redirect_uri=%2F" '
+            'style="color:#fff;text-decoration:underline">Sign out</a></div>'
+        )
+        out = out.replace("<body>", "<body>" + banner, 1)
+    return out
 
 
 _RATE_BUCKETS: dict[tuple[str, str], deque] = defaultdict(deque)
@@ -352,6 +366,7 @@ def create_app(db_path: str | None = None) -> Flask:
         body = _render_calculator(
             html(), cfg, display_name=display_name,
             admin_mode=True, admin_slug=editing_slug,
+            sso_user=_sso_user(),
         )
         return Response(body, mimetype="text/html")
 
