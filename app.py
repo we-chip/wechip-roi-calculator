@@ -104,6 +104,8 @@ def _render_calculator(
             "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:6px 12px;"
             'border-bottom-left-radius:8px">'
             f'<span>Signed in as <strong>{_esc(sso_user)}</strong></span>'
+            '<a href="/.auth/login/aad?post_login_redirect_uri=%2Fadmin" '
+            'style="color:#fff;text-decoration:underline">Switch account</a>'
             '<a href="/.auth/logout?post_logout_redirect_uri=%2F" '
             'style="color:#fff;text-decoration:underline">Sign out</a></div>'
         )
