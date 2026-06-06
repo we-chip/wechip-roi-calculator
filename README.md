@@ -30,6 +30,8 @@ Admins create a slug under `/admin/links/new` with pre-set economic assumptions.
 Customers visit `/c/<slug>` and see the calculator with those values applied
 (and `revPerColDay` locked). Every view, customer change, and print is logged.
 
+**Modèle:** lock the customer to Filaire or Solaire, or leave Auto (free choice).
+
 ### Environment variables
 
 | Var | Purpose | Default |

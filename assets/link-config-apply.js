@@ -86,6 +86,21 @@
     }
   }
 
+  // ── Hide buttons that don't belong on a per-lead customer link ──
+  // "Réinitialiser" would wipe admin-supplied values, and "Partager" leaks
+  // a /?mod=...&rev=... URL that bypasses this trackable link.
+  function hideCustomerButtons() {
+    ['btnReset', 'btnShare'].forEach(function (id) {
+      var b = document.getElementById(id);
+      if (b) b.style.display = 'none';
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', hideCustomerButtons);
+  } else {
+    hideCustomerButtons();
+  }
+
   // ── Preset values ──
   if (Number.isFinite(cfg.revPerColDay)) setVal('revPerColDay', cfg.revPerColDay);
   if (Number.isFinite(cfg.discountPct))  setVal('discountPct',  cfg.discountPct);
@@ -98,6 +113,53 @@
   // revPerColDay is hidden but admin-controlled — mark aria for AT users.
   lock('revPerColDay');
   // Per-module pricing has no DOM input; the IIFE reads cfg.pricePerModule directly.
+
+  // ── Forced model (Filaire / Solaire) ──
+  // When admin sets a model lock, click the matching button so the calculator's
+  // own setModel() runs (state stays consistent), then disable both toggle buttons.
+  // Deferred until DOMContentLoaded because the calculator IIFE binds its click
+  // handlers below this script and must run before our programmatic .click().
+  if (cfg.model === 'filaire' || cfg.model === 'solaire') {
+    var forcedId = cfg.model === 'solaire' ? 'btnSolaire' : 'btnFilaire';
+    var otherId  = cfg.model === 'solaire' ? 'btnFilaire' : 'btnSolaire';
+
+    function applyForcedModel() {
+      var forcedBtn = $(forcedId);
+      var otherBtn  = $(otherId);
+
+      function disableScenarioBtn(btn) {
+        if (!btn) return;
+        btn.disabled = true;
+        btn.setAttribute('aria-disabled', 'true');
+        btn.style.opacity = '0.6';
+        btn.style.cursor = 'not-allowed';
+      }
+
+      if (forcedBtn && !forcedBtn.classList.contains('active')) {
+        try { forcedBtn.click(); } catch (e) {}
+      }
+      disableScenarioBtn(forcedBtn);
+      disableScenarioBtn(otherBtn);
+
+      var scenarioField = forcedBtn ? forcedBtn.closest('.field') : null;
+      var scenarioLabel = scenarioField ? scenarioField.querySelector('label') : null;
+      if (scenarioLabel && !scenarioLabel.querySelector('.wc-lock')) {
+        var icon = document.createElement('span');
+        icon.className = 'wc-lock';
+        icon.title = 'Modèle verrouillé par WECHIP';
+        icon.setAttribute('aria-label', 'verrouillé');
+        icon.style.cssText = 'display:inline-block;margin-left:6px;font-size:11px;color:var(--wc-fg-3,#888)';
+        icon.textContent = '🔒';
+        scenarioLabel.appendChild(icon);
+      }
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', applyForcedModel);
+    } else {
+      applyForcedModel();
+    }
+  }
 
   // ── Event reporting (best-effort) ──
   if (!slug) return;

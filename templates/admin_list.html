@@ -25,13 +25,14 @@
 </p>
 <table>
   <thead>
-    <tr><th>Slug</th><th>Name</th><th>Created</th><th>Views</th><th>Last view</th><th>Status</th><th>Actions</th></tr>
+    <tr><th>Slug</th><th>Name</th><th>Modèle</th><th>Created</th><th>Views</th><th>Last view</th><th>Status</th><th>Actions</th></tr>
   </thead>
   <tbody>
   {% for l in links %}
     <tr class="{% if l.revoked_at %}revoked{% endif %}">
       <td><a href="/c/{{ l.slug }}" target="_blank">{{ l.slug }}</a></td>
       <td>{{ l.display_name or '—' }}</td>
+      <td>{{ {'auto':'Auto','filaire':'Filaire','solaire':'Solaire'}.get(l.model or 'auto', 'Auto') }}</td>
       <td>{{ l.created_at }}</td>
       <td>{{ l.view_count }}</td>
       <td>{{ l.last_view or '—' }}</td>
@@ -50,7 +51,7 @@
       </td>
     </tr>
   {% else %}
-    <tr><td colspan="7" style="text-align:center;color:#6b7280;padding:24px">No links yet.</td></tr>
+    <tr><td colspan="8" style="text-align:center;color:#6b7280;padding:24px">No links yet.</td></tr>
   {% endfor %}
   </tbody>
 </table>

@@ -55,6 +55,23 @@
   row1.appendChild(slugWrap);
   panel.appendChild(row1);
 
+  // Model lock select: forces customer to a specific scenario, or 'auto' = free choice.
+  var modelRow = el('div', { style: 'margin-bottom:8px' });
+  var modelLabel = el('label', { for: 'admin_model',
+    style: 'font-size:11px;font-weight:600;display:block' }, ['Modèle imposé au client']);
+  var modelSelect = el('select', { id: 'admin_model',
+    style: 'padding:6px 8px;border:1px solid #fdba74;border-radius:6px;font-size:13px;margin-top:2px;background:#fff' });
+  [['auto', 'Auto — le client choisit'],
+   ['filaire', 'Filaire — verrouillé'],
+   ['solaire', 'Solaire — verrouillé']].forEach(function (pair) {
+    var o = el('option', { value: pair[0] }, [pair[1]]);
+    if ((cfg.model || 'auto') === pair[0]) o.setAttribute('selected', 'selected');
+    modelSelect.appendChild(o);
+  });
+  modelRow.appendChild(modelLabel);
+  modelRow.appendChild(modelSelect);
+  panel.appendChild(modelRow);
+
   var btnRow = el('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' });
   var btnSave = el('button', { type: 'button', id: 'admin_btn_save',
     style: 'padding:8px 16px;background:#ea580c;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px' });
@@ -318,7 +335,7 @@
     }
     var collected = collectConfig();
     if (collected.error) { showStatus(collected.error, false); return; }
-    var body = { display_name: name, config: collected.config };
+    var body = { display_name: name, config: collected.config, model: modelSelect.value || 'auto' };
     var url, method;
     if (editingSlug) {
       url = '/admin/api/links/' + editingSlug;

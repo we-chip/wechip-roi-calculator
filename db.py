@@ -31,6 +31,15 @@ def connect(db_path: str | None = None) -> Iterator[sqlite3.Connection]:
         conn.close()
 
 
+ALLOWED_MODELS = ("auto", "filaire", "solaire")
+
+
+def _normalize_model(value: Any) -> str:
+    if isinstance(value, str) and value in ALLOWED_MODELS:
+        return value
+    return "auto"
+
+
 def init_db(db_path: str | None = None) -> None:
     with connect(db_path) as c:
         c.executescript(
@@ -39,6 +48,7 @@ def init_db(db_path: str | None = None) -> None:
                 slug TEXT PRIMARY KEY,
                 display_name TEXT NOT NULL DEFAULT '',
                 config_json TEXT NOT NULL DEFAULT '{}',
+                model TEXT NOT NULL DEFAULT 'auto',
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL,
                 revoked_at TEXT
@@ -54,25 +64,41 @@ def init_db(db_path: str | None = None) -> None:
                 ON link_events(slug, created_at);
             """
         )
+        # Lazy migration for existing DBs created before `model` was added.
+        cols = {r[1] for r in c.execute("PRAGMA table_info(links)").fetchall()}
+        if "model" not in cols:
+            c.execute("ALTER TABLE links ADD COLUMN model TEXT NOT NULL DEFAULT 'auto'")
 
 
 # ── links CRUD ────────────────────────────────────────────────────────────
 
-def create_link(slug: str, display_name: str, config: dict[str, Any], db_path: str | None = None) -> None:
+def create_link(
+    slug: str,
+    display_name: str,
+    config: dict[str, Any],
+    db_path: str | None = None,
+    model: str = "auto",
+) -> None:
     now = _now()
     with connect(db_path) as c:
         c.execute(
-            "INSERT INTO links(slug, display_name, config_json, created_at, updated_at) "
-            "VALUES (?, ?, ?, ?, ?)",
-            (slug, display_name, json.dumps(config), now, now),
+            "INSERT INTO links(slug, display_name, config_json, model, created_at, updated_at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (slug, display_name, json.dumps(config), _normalize_model(model), now, now),
         )
 
 
-def update_link(slug: str, display_name: str, config: dict[str, Any], db_path: str | None = None) -> bool:
+def update_link(
+    slug: str,
+    display_name: str,
+    config: dict[str, Any],
+    db_path: str | None = None,
+    model: str = "auto",
+) -> bool:
     with connect(db_path) as c:
         cur = c.execute(
-            "UPDATE links SET display_name=?, config_json=?, updated_at=? WHERE slug=?",
-            (display_name, json.dumps(config), _now(), slug),
+            "UPDATE links SET display_name=?, config_json=?, model=?, updated_at=? WHERE slug=?",
+            (display_name, json.dumps(config), _normalize_model(model), _now(), slug),
         )
         return cur.rowcount > 0
 
@@ -93,6 +119,7 @@ def get_link(slug: str, db_path: str | None = None) -> dict[str, Any] | None:
             return None
         d = dict(row)
         d["config"] = json.loads(d.get("config_json") or "{}")
+        d["model"] = _normalize_model(d.get("model"))
         return d
 
 
