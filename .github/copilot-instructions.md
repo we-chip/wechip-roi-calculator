@@ -27,6 +27,18 @@ If asked to draft an implementation prompt or scope a feature:
 3. Output the final prompt inside a ```code box```
 4. User opens a fresh execution chat with that prompt
 
+## Execution Routing Gate (mandatory before building ANY feature, local mode)
+
+This fires even when there is no planning phase — a direct "implement / build / apply /
+add / wire up / refactor X", or applying a design handoff/spec:
+
+1. Before writing code that touches >1 file or applies a design/handoff/spec, load
+   `../WECHIP-OS/shared/procedures/local-vs-cloud-routing.md` and run its Rubric FIRST.
+2. Default is cloud (Copilot) — `gh issue create … -a copilot`. Local is the exception
+   (secrets, deploys, umbrella edits, exploration).
+3. Doing feature-sized work inline in this chat because it's "just mechanical" is the
+   anti-pattern the token-efficiency north star exists to kill.
+
 ## Rules
 
 - keep answers short
