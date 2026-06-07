@@ -23,6 +23,13 @@ For any prompt drafting or feature scoping, follow `../WECHIP-OS/shared/procedur
 - planning chat: no file edits, draft prompt inside a ```code box``` only
 - execution: open a fresh chat with that prompt
 
+## Execution routing gate (before building any feature)
+
+Even with no planning phase — a direct "implement/apply/build X" or a design handoff —
+run `../WECHIP-OS/shared/procedures/local-vs-cloud-routing.md` BEFORE touching code if the
+change spans >1 file or applies a design/spec. Default is cloud (Copilot); local is the
+exception. Mechanical ≠ "do it in chat".
+
 Rules:
 - keep this file thin
 - do not duplicate shared knowledge here
