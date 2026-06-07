@@ -8,6 +8,12 @@ on:
 jobs:
   copilot-setup-steps:
     runs-on: ubuntu-latest
+    # Grant the coding agent's environment read access to repo contents. Without
+    # this the agent's internal checkout lands in a shallow/detached state and
+    # `git rev-parse --abbrev-ref HEAD` exits 128 ("unknown revision"), crashing
+    # the run before it reads the task. See community discussion #187279.
+    permissions:
+      contents: read
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
