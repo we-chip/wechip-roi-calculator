@@ -1,0 +1,45 @@
+name: Notify merge-manager (PR finished)
+
+# Event-driven fast path for the WECHIP autopickup loop. When a Copilot PR in
+# THIS repo finishes (its `[WIP]` title prefix drops, or it's marked ready), this
+# pokes the umbrella merge-manager in we-chip/WECHIP-OS to run immediately instead
+# of waiting for the next scheduled sweep. The umbrella holds all the merge-safety
+# gates; this only triggers it.
+#
+# Cost-safe by construction:
+#   - The JOB is skipped (no runner, no billed minutes) for any PR that isn't a
+#     finished Copilot PR — so human PRs and still-[WIP] edits cost nothing.
+#   - The poke STEP is skipped if the dispatch token isn't set yet, so this is
+#     safe to merge before the secret exists (green no-op, no red noise).
+#
+# Requires a fine-grained PAT with "Actions: write" on we-chip/WECHIP-OS only,
+# stored as the `MERGE_MANAGER_DISPATCH_TOKEN` secret (org secret shared to the
+# WECHIP child repos). The umbrella's */30 cron remains the backstop.
+
+on:
+  pull_request:
+    types: [edited, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  poke:
+    # Fire only on the finished-Copilot-PR transition:
+    #   - head branch is copilot/*, AND
+    #   - the title no longer carries [WIP], AND
+    #   - this event is the transition itself (undrafted, or the title just lost
+    #     its [WIP] prefix) — not an unrelated later edit.
+    if: >-
+      startsWith(github.event.pull_request.head.ref, 'copilot/') &&
+      !contains(github.event.pull_request.title, '[WIP]') &&
+      (github.event.action == 'ready_for_review' ||
+       contains(github.event.changes.title.from, '[WIP]'))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger umbrella merge-manager
+        env:
+          GH_TOKEN: ${{ secrets.MERGE_MANAGER_DISPATCH_TOKEN }}
+        # Skip silently if the token isn't configured yet (safe pre-secret merge).
+        if: env.GH_TOKEN != ''
+        run: gh workflow run merge-manager.yml -R we-chip/WECHIP-OS -f dry_run=false
