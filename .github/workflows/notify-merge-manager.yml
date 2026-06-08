@@ -42,4 +42,7 @@ jobs:
           GH_TOKEN: ${{ secrets.MERGE_MANAGER_DISPATCH_TOKEN }}
         # Skip silently if the token isn't configured yet (safe pre-secret merge).
         if: env.GH_TOKEN != ''
-        run: gh workflow run merge-manager.yml -R we-chip/WECHIP-OS -f dry_run=false
+        # `--ref main` is required: without it `gh workflow run` resolves the
+        # default branch via a GraphQL metadata call the fine-grained dispatch
+        # token isn't scoped for. Passing the ref explicitly needs only Actions:write.
+        run: gh workflow run merge-manager.yml -R we-chip/WECHIP-OS --ref main -f dry_run=false
