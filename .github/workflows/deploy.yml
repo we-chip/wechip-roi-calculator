@@ -61,7 +61,7 @@ jobs:
           path: app.zip
           overwrite: true
 
-  deploy:
+  deploy-staging:
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -75,18 +75,19 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Ensure Oryx builds runtime deps
+      - name: Ensure Oryx builds runtime deps (staging slot)
         run: |
           az webapp config appsettings set \
             --name wechip-roi-calculator \
             --resource-group wechip-rg \
+            --slot staging \
             --settings SCM_DO_BUILD_DURING_DEPLOYMENT=true \
             -o none
 
-      - name: Fire-and-forget zip push to Kudu
+      - name: Fire-and-forget zip push to Kudu (staging slot)
         run: |
           set -euo pipefail
-          APP="wechip-roi-calculator"
+          APP="wechip-roi-calculator-staging"
           TOKEN=$(az account get-access-token \
             --resource https://management.core.windows.net/ \
             --query accessToken -o tsv)
@@ -107,14 +108,14 @@ jobs:
             *) echo "::error::Kudu zipdeploy rejected (HTTP=${HTTP})"; exit 1 ;;
           esac
 
-  smoke-test:
-    needs: deploy
+  smoke-staging:
+    needs: deploy-staging
     runs-on: ubuntu-latest
     steps:
-      - name: Health check + deployed-commit verification
+      - name: Health check + deployed-commit verification (staging)
         run: |
           set -euo pipefail
-          URL="https://wechip-roi-calculator.azurewebsites.net/api/health"
+          URL="https://wechip-roi-calculator-staging.azurewebsites.net/api/health"
           EXPECTED="${GITHUB_SHA}"
           deadline=$(( $(date +%s) + 360 ))
           while [ "$(date +%s)" -lt "${deadline}" ]; do
@@ -139,9 +140,89 @@ jobs:
           echo "::error::Smoke test timed out: health never reported the expected build_commit (${EXPECTED}). Likely a stuck server-side build."; exit 1
 
 
+  # Staging is green — promote the SAME validated artifact to prod. We deploy code
+  # to prod (no slot swap) so prod's persistent /home DB is never moved/replaced.
+  deploy-prod:
+    needs: smoke-staging
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          name: app-build
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Ensure Oryx builds runtime deps (prod)
+        run: |
+          az webapp config appsettings set \
+            --name wechip-roi-calculator \
+            --resource-group wechip-rg \
+            --settings SCM_DO_BUILD_DURING_DEPLOYMENT=true \
+            -o none
+
+      - name: Fire-and-forget zip push to Kudu (prod)
+        run: |
+          set -euo pipefail
+          APP="wechip-roi-calculator"
+          TOKEN=$(az account get-access-token \
+            --resource https://management.core.windows.net/ \
+            --query accessToken -o tsv)
+          URL="https://${APP}.scm.azurewebsites.net/api/zipdeploy?isAsync=true"
+          echo "Pushing app.zip → ${URL}"
+          HTTP=$(curl -sS -o /tmp/zipdeploy.out -w "%{http_code}" \
+            -X POST \
+            -H "Authorization: Bearer ${TOKEN}" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary @app.zip \
+            --max-time 180 \
+            "${URL}") || { echo "::error::curl failed (HTTP=${HTTP})"; cat /tmp/zipdeploy.out; exit 1; }
+          echo "Kudu zipdeploy HTTP=${HTTP}"
+          cat /tmp/zipdeploy.out || true
+          case "${HTTP}" in
+            200|202) echo "Kudu accepted the zip. Server build starts now." ;;
+            409) echo "::warning::Kudu reports a deployment already in progress; smoke-test will verify final state." ;;
+            *) echo "::error::Kudu zipdeploy rejected (HTTP=${HTTP})"; exit 1 ;;
+          esac
+
+  smoke-prod:
+    needs: deploy-prod
+    runs-on: ubuntu-latest
+    steps:
+      - name: Health check + deployed-commit verification (prod)
+        run: |
+          set -euo pipefail
+          URL="https://wechip-roi-calculator.azurewebsites.net/api/health"
+          EXPECTED="${GITHUB_SHA}"
+          deadline=$(( $(date +%s) + 360 ))
+          while [ "$(date +%s)" -lt "${deadline}" ]; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "${URL}" || true)
+            if [ "${code}" = "200" ]; then
+              body=$(curl -s "${URL}")
+              compact=$(printf '%s' "${body}" | tr -d ' \t\n\r')
+              printf '%s' "${compact}" | grep -q '"status":"ok"' \
+                || { echo "::error::Health body missing marker (\"status\":\"ok\")"; exit 1; }
+              deployed=$(printf '%s' "${body}" | python3 -c "import sys,json;print(json.load(sys.stdin).get('build_commit',''))" 2>/dev/null || true)
+              if [ -z "${deployed}" ]; then
+                echo "Health OK but build_commit empty (old code still live), retrying..."; sleep 8; continue
+              fi
+              if [ "${deployed}" = "${EXPECTED}" ]; then
+                echo "OK ${code} deployed_commit=${deployed} matches github.sha"; exit 0
+              fi
+              echo "Stale deploy: live=${deployed} expected=${EXPECTED} (server build not yet active), retrying..."
+              sleep 8; continue
+            fi
+            echo "Got ${code}, retrying..."; sleep 5
+          done
+          echo "::error::Prod smoke test timed out: health never reported the expected build_commit (${EXPECTED})."; exit 1
+
+
   on-failure:
     name: open-deploy-doctor-issue
-    needs: [build, deploy, smoke-test]
+    needs: [build, deploy-staging, smoke-staging, deploy-prod, smoke-prod]
     if: ${{ failure() }}
     runs-on: ubuntu-latest
     steps:
