@@ -17,6 +17,7 @@ from flask import (
     Flask,
     Response,
     abort,
+    current_app,
     redirect,
     render_template,
     request,
@@ -25,6 +26,7 @@ from flask import (
     url_for,
 )
 
+import auth_policy
 import db as link_db
 
 
@@ -168,12 +170,37 @@ def _sso_user() -> str | None:
 
 
 def _sso_user_allowed(email: str) -> bool:
-    """If ``ADMIN_EMAILS`` is set, the SSO user's email must be listed; otherwise any
-    authenticated tenant member is allowed (the app registration is single-tenant)."""
+    """Authorize SSO user via deny-by-default admin allowlist policy."""
+    subject = email.strip().lower()
     allow = os.environ.get("ADMIN_EMAILS", "").strip()
-    if not allow:
-        return True
-    return email.lower() in {e.strip().lower() for e in allow.split(",") if e.strip()}
+    subjects = {
+        e.strip().lower(): {"roi-calculator": ["admin"]}
+        for e in allow.split(",")
+        if e.strip()
+    }
+    matrix = auth_policy.AccessMatrix.from_dict(
+        {
+            "subjects": subjects,
+            "roles": {"admin": ["read", "write", "manage"]},
+        }
+    )
+    identity = auth_policy.Identity(subject=subject, tenant=None, claims={})
+    decision = auth_policy.decide(identity, "roi-calculator", "admin", matrix)
+    if not decision.allowed and os.environ.get("ADMIN_ALLOW_ALL_TENANT", "").strip() == "1":
+        current_app.logger.warning(
+            "ADMIN_ALLOW_ALL_TENANT=1 enabled; allowing any authenticated tenant member"
+        )
+        decision = auth_policy.Decision(
+            allowed=True,
+            reason="allow-all override",
+            app=decision.app,
+            role="admin",
+        )
+    current_app.logger.info(
+        "sso_auth_decision %s",
+        json.dumps(auth_policy.audit_fields(identity, decision), sort_keys=True),
+    )
+    return decision.allowed
 
 
 def _sso_login_redirect() -> Response:
@@ -186,8 +213,9 @@ def basic_auth_required(view):
     """Gate admin routes.
 
     Precedence:
-      1. Entra SSO via Easy Auth principal (production). Authorized by ``ADMIN_EMAILS``,
-         or any tenant member if unset. When ``ADMIN_SSO`` is on, anonymous browsers are
+      1. Entra SSO via Easy Auth principal (production). Authorized by ``ADMIN_EMAILS``
+         with deny-by-default when unset/empty. ``ADMIN_ALLOW_ALL_TENANT=1`` is an
+         explicit legacy override. When ``ADMIN_SSO`` is on, anonymous browsers are
          redirected to the Microsoft sign-in.
       2. HTTP Basic auth (``BASIC_AUTH_USER``/``BASIC_AUTH_PASS``) — local-dev / machine
          / API fallback. Keeps existing behavior when SSO is not configured.
