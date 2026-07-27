@@ -46,10 +46,15 @@ Customers visit `/c/<slug>` and see the calculator with those values applied
 `/admin/links` (Basic auth).
 
 ### Azure persistence
-**Important:** on Azure App Service, set `LINKS_DB_PATH=/home/data/roi_links.db`
-so the SQLite file lives on the persisted `/home` volume and survives redeploys.
-Also set `FLASK_SECRET_KEY` and `BASIC_AUTH_USER` / `BASIC_AUTH_PASS` as app
-settings.
+**Important:** on Azure App Service, set `LINKS_DB_PATH=/home/data/roi_links.db` so the SQLite
+file lives on the persisted `/home` volume and survives redeploys. Also set `FLASK_SECRET_KEY`
+and `BASIC_AUTH_USER` / `BASIC_AUTH_PASS` as app settings.
 
 ## Deployment
 Push to `main` → GitHub Actions OIDC deploy to Azure App Service.
+
+## Where the rules live
+
+- Project scope and constraints: `shared/knowledge/project-scope.md`
+- Shared knowledge + procedures: `../WECHIP-OS/shared/`
+- Agent front doors: `CLAUDE.md` (Claude Code), `AGENTS.md` (Codex CLI)

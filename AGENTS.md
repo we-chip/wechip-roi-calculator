@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-Front door for Claude Code here. `AGENTS.md` is the other tool's and says the same; `shared/` outranks both.
+Front door for Codex CLI here. `CLAUDE.md` is the other tool's and says the same; `shared/` outranks both.
 
 Your role: review, debugging, maintenance, quality.
 
