@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-Local agent front door. `AGENTS.md` is its peer; project scope and umbrella `shared/` sources outrank both.
+Local agent front door. `CLAUDE.md` is its peer; project scope and umbrella `shared/` sources outrank both.
 
 Before reading code, scoping, or saying what exists, check freshness:
 ```bash
