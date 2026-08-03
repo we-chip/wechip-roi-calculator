@@ -6,12 +6,15 @@ ROI Calculator is an interactive customer-facing configurator within the WECHIP 
 - ROI calculation for WECHIP locker solutions
 - Interactive configuration options
 - Visual output for customer presentations
+- Per-lead share links with stored configuration
+- Link activity tracking and an authenticated administration/statistics interface
 
 ## Authority Boundary
 
 ROI Calculator owns:
-- Static HTML/CSS/JS calculator files
-- Flask serving wrapper
+- Delivered HTML/CSS/JS calculator assets
+- Flask routes for the public calculator, customer links, events, and administration
+- Link/event persistence and the administration access policy
 - Deployment configuration (Azure App Service)
 
 ROI Calculator defers to WECHIP-OS for:
@@ -21,11 +24,14 @@ ROI Calculator defers to WECHIP-OS for:
 
 ## Key Live Check
 
-https://wechip-roi-calculator.azurewebsites.net/ returns 200 and renders the calculator page.
+- `GET /api/health` returns `200` with the deployed build marker.
+- `GET https://wechip-roi-calculator.azurewebsites.net/` returns `200` and renders the calculator.
 
 ## Main Caveat
 
-The HTML/CSS/JS files (`WECHIP_Configurateur_Client.html`, `wechip-tokens.css`) are delivered assets — do not modify their content without explicit approval.
+The HTML/CSS/JS files (`WECHIP_Configurateur_Client.html`, `wechip-tokens.css`) are delivered
+assets. The Flask wrapper may evolve around them, but their content must not change without
+explicit approval.
 
 ## Do not touch
 
